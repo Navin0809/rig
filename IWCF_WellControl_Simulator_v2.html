@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IWCF Level 3 — Well Control Training Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg:       #0a0d10;
+    --panel:    #0f1419;
+    --border:   #1e2d3d;
+    --accent:   #00d4ff;
+    --danger:   #ff3b3b;
+    --warn:     #ffb300;
+    --success:  #00e676;
+    --muted:    #4a6070;
+    --text:     #cdd9e5;
+    --glow:     rgba(0,212,255,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  #header {
+    background: linear-gradient(90deg, #060a0e 0%, #0f1e2c 50%, #060a0e 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 4px 30px rgba(0,212,255,0.2);
+  }
+  #header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(0,212,255,0.6);
+  }
+  #header .sub { font-size: 0.75rem; color: var(--muted); letter-spacing: 2px; margin-top: 2px; }
+  #timer-box {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.4rem; color: var(--warn);
+    text-shadow: 0 0 10px rgba(255,179,0,0.5);
+  }
+  #score-box {
+    text-align:right;
+  }
+  #score-box .label { font-size:0.7rem; color:var(--muted); letter-spacing:2px; }
+  #score-box .val { font-family:'Orbitron',monospace; font-size:1.2rem; color:var(--success); }
+
+  /* ── SCREENS ── */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── MENU ── */
+  #menu-screen {
+    max-width: 900px; margin: 0 auto; padding: 40px 20px;
+  }
+  .menu-hero {
+    text-align: center; margin-bottom: 40px;
+  }
+  .menu-hero h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 2rem; color: var(--accent);
+    text-shadow: 0 0 30px rgba(0,212,255,0.5);
+    margin-bottom: 10px;
+  }
+  .menu-hero p { color: var(--muted); font-size: 1rem; line-height: 1.6; max-width:600px; margin:0 auto; }
+
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px; margin-top: 30px;
+  }
+  .scenario-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .scenario-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--accent);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s;
+  }
+  .scenario-card:hover { border-color: var(--accent); box-shadow: 0 0 20px var(--glow); }
+  .scenario-card:hover::before { transform: scaleX(1); }
+  .scenario-card .diff {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .diff.easy   { background: rgba(0,230,118,0.15); color: var(--success); border: 1px solid var(--success); }
+  .diff.medium { background: rgba(255,179,0,0.15);  color: var(--warn);    border: 1px solid var(--warn);    }
+  .diff.hard   { background: rgba(255,59,59,0.15);  color: var(--danger);  border: 1px solid var(--danger);  }
+  .scenario-card h3 { font-size: 1.05rem; color: #fff; margin-bottom: 6px; }
+  .scenario-card p  { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+  .scenario-card .score-badge {
+    position: absolute; top: 12px; right: 12px;
+    font-family: 'Share Tech Mono'; font-size: 0.7rem; color: var(--success);
+  }
+
+  /* ── SIMULATOR ── */
+  #sim-screen {
+    display: none; flex-direction: column;
+    height: calc(100vh - 58px);
+  }
+  #sim-screen.active { display: flex; }
+
+  #sim-body {
+    flex: 1; display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    gap: 0; overflow: hidden;
+  }
+
+  /* LEFT: gauges */
+  #gauges-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 16px; overflow-y: auto;
+  }
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem; letter-spacing: 3px;
+    color: var(--muted); margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+
+  .gauge-group { margin-bottom: 20px; }
+  .gauge-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .gauge-label .name { font-size: 0.78rem; color: var(--muted); letter-spacing: 1px; }
+  .gauge-label .value {
+    font-family: 'Share Tech Mono'; font-size: 1.05rem;
+    color: var(--accent); text-shadow: 0 0 8px rgba(0,212,255,0.4);
+  }
+  .gauge-label .unit { font-size: 0.65rem; color: var(--muted); margin-left: 3px; }
+
+  .gauge-bar {
+    height: 8px; background: #1a2530;
+    border-radius: 4px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .gauge-fill {
+    height: 100%; border-radius: 4px;
+    background: var(--accent);
+    transition: width 0.4s, background 0.3s;
+  }
+  .gauge-fill.warn    { background: var(--warn); }
+  .gauge-fill.danger  { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+  /* TREND SPARKLINE */
+  .sparkline { width: 100%; height: 30px; margin-top: 4px; }
+
+  /* CENTER: rig view + log */
+  #center-panel {
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  #rig-view {
+    position: relative;
+    background: linear-gradient(180deg, #060c12 0%, #0a1520 100%);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 260px;
+    overflow: hidden;
+  }
+
+  /* SVG rig diagram */
+  #rig-svg { width: 100%; height: 100%; }
+
+  /* Status overlays */
+  .rig-status {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem; letter-spacing: 3px;
+    padding: 4px 16px; border-radius: 2px;
+    border: 1px solid;
+    backdrop-filter: blur(6px);
+  }
+  .rig-status.normal  { color: var(--success); border-color: var(--success); background: rgba(0,230,118,0.1); }
+  .rig-status.warning { color: var(--warn);    border-color: var(--warn);    background: rgba(255,179,0,0.1); }
+  .rig-status.danger  { color: var(--danger);  border-color: var(--danger);  background: rgba(255,59,59,0.1);
+    animation: blink 0.8s infinite; }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Event log */
+  #event-log {
+    flex: 1; overflow-y: auto;
+    padding: 12px 16px;
+    font-family: 'Share Tech Mono'; font-size: 0.78rem;
+    line-height: 1.7;
+  }
+  .log-entry {
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(30,45,61,0.5);
+    display: flex; gap: 10px;
+  }
+  .log-time { color: var(--muted); min-width: 55px; }
+  .log-msg.info    { color: var(--text); }
+  .log-msg.warn    { color: var(--warn); }
+  .log-msg.danger  { color: var(--danger); }
+  .log-msg.success { color: var(--success); }
+  .log-msg.calc    { color: #c678dd; }
+
+  /* RIGHT: controls */
+  #controls-panel {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    overflow-y: auto; padding: 16px;
+  }
+
+  .control-section { margin-bottom: 20px; }
+  .control-section-title {
+    font-size: 0.65rem; letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+
+  /* Buttons */
+  .btn {
+    display: block; width: 100%; padding: 9px 12px;
+    margin-bottom: 7px; border: none; border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; font-weight: 600;
+    letter-spacing: 1px; cursor: pointer;
+    transition: all 0.15s; text-align: left;
+    position: relative; overflow: hidden;
+  }
+  .btn::after {
+    content: ''; position: absolute;
+    inset: 0; background: rgba(255,255,255,0.05);
+    opacity: 0; transition: opacity 0.1s;
+  }
+  .btn:hover::after { opacity: 1; }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary  { background: rgba(0,212,255,0.15); border: 1px solid var(--accent); color: var(--accent); }
+  .btn-warn     { background: rgba(255,179,0,0.12); border: 1px solid var(--warn);   color: var(--warn); }
+  .btn-danger   { background: rgba(255,59,59,0.12); border: 1px solid var(--danger); color: var(--danger); }
+  .btn-success  { background: rgba(0,230,118,0.12); border: 1px solid var(--success);color: var(--success); }
+  .btn-neutral  { background: rgba(74,96,112,0.15); border: 1px solid var(--muted);  color: var(--muted); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  /* Toggle buttons */
+  .btn-toggle { display: flex; align-items: center; gap: 8px; }
+  .toggle-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid currentColor;
+    flex-shrink: 0; transition: background 0.2s;
+  }
+  .toggle-dot.on { background: currentColor; }
+
+  /* Slider */
+  .slider-row { margin-bottom: 12px; }
+  .slider-row label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; }
+  .slider-row label span { color: var(--accent); font-family: 'Share Tech Mono'; }
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 4px;
+    background: var(--border); border-radius: 2px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--accent);
+    cursor: pointer; box-shadow: 0 0 6px rgba(0,212,255,0.6);
+  }
+
+  /* ── BOTTOM DECISION PANEL (replaces modal) ── */
+  #decision-panel {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 220px;
+    display: none;
+    grid-template-columns: 1fr 1fr;
+    background: #07111a;
+    border-top: 2px solid var(--border);
+    z-index: 150;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  }
+  #decision-panel.show { display: grid; }
+  #dp-left {
+    border-right: 1px solid var(--border);
+    padding: 14px 18px;
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  #dp-header {
+    font-family: 'Orbitron'; font-size: 0.6rem; letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  #dp-countdown-row {
+    display: none; align-items: center; gap: 10px;
+    background: rgba(255,179,0,0.06); border: 1px solid rgba(255,179,0,0.2);
+    border-radius: 4px; padding: 9px 12px; margin-bottom: 10px;
+  }
+  #dp-countdown-row.show { display: flex; }
+  .dp-cd-label { font-size: 0.72rem; color: var(--warn); white-space: nowrap; }
+  .dp-cd-bar-wrap { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .dp-cd-bar { height: 100%; background: var(--warn); border-radius: 2px; transition: width 0.9s linear; }
+  #dp-cd-secs { font-family: 'Share Tech Mono'; color: var(--warn); font-size: 0.85rem; min-width: 28px; }
+  #dp-question-text { font-size: 0.9rem; font-weight: 600; color: #fff; line-height: 1.6; display: none; }
+  #dp-idle-msg { font-size: 0.8rem; color: var(--muted); line-height: 1.8; padding-top: 4px; }
+  #dp-right { padding: 14px 18px; overflow-y: auto; display: flex; flex-direction: column; justify-content: center; }
+  #dp-options { display: none; }
+  .dp-opt {
+    display: block; width: 100%; text-align: left;
+    background: #0d1820; border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 12px; margin-bottom: 6px;
+    font-family: 'Rajdhani'; font-size: 0.83rem; font-weight: 500; color: var(--text);
+    cursor: pointer; transition: all 0.15s; line-height: 1.4;
+  }
+  .dp-opt:hover { background: #112030; border-color: var(--accent); color: #fff; }
+  .dp-opt .dp-key { font-family: 'Share Tech Mono'; color: var(--accent); font-size: 0.7rem; margin-right: 7px; }
+  .dp-opt.correct { background: rgba(0,230,118,.1); border-color: var(--success); color: var(--success); }
+  .dp-opt.wrong   { background: rgba(255,59,59,.08); border-color: var(--danger);  color: var(--danger); }
+  .dp-opt:disabled { cursor: not-allowed; }
+  #dp-feedback { display: none; }
+  #dp-fb-title { font-family: 'Orbitron'; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 8px; }
+  #dp-fb-why { font-size: 0.82rem; line-height: 1.6; color: var(--text); margin-bottom: 8px; }
+  #dp-fb-calc {
+    background: #050d14; border: 1px solid var(--border); border-left: 3px solid #c678dd;
+    padding: 8px 12px; border-radius: 3px; font-family: 'Share Tech Mono'; font-size: 0.67rem;
+    color: #c678dd; line-height: 1.7; margin-bottom: 8px; white-space: pre-wrap;
+    max-height: 80px; overflow-y: auto; display: none;
+  }
+  #dp-continue-btn {
+    display: inline-block; padding: 6px 18px; border: none; border-radius: 3px;
+    background: rgba(0,212,255,.14); border: 1px solid var(--accent); color: var(--accent);
+    font-family: 'Rajdhani'; font-size: 0.88rem; font-weight: 600; letter-spacing: 1px;
+    cursor: pointer; transition: all .15s;
+  }
+  #dp-continue-btn:hover { filter: brightness(1.2); }
+  #dp-idle-right { color: var(--muted); font-size: 0.8rem; line-height: 1.9; }
+  /* sim-body height is set dynamically in JS when panel opens */
+
+  /* SCENARIO BRIEF */
+  #brief-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(6,10,14,0.9); backdrop-filter: blur(10px);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  #brief-modal.show { display: flex; }
+  .brief-box {
+    background: #0f1a24;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    max-width: 620px; width: 92%;
+    padding: 32px;
+    box-shadow: 0 0 80px rgba(0,212,255,0.15);
+  }
+  .brief-box h3 {
+    font-family: 'Orbitron'; color: var(--accent);
+    font-size: 1rem; letter-spacing: 3px; margin-bottom: 6px;
+  }
+  .brief-box .scenario-name {
+    font-size: 1.3rem; color: #fff; font-weight: 700; margin-bottom: 16px;
+  }
+  .brief-box .brief-data {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 20px;
+  }
+  .brief-item { background: #060c12; border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; }
+  .brief-item .bi-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 2px; }
+  .brief-item .bi-val { font-family: 'Share Tech Mono'; color: var(--accent); font-size: 1rem; margin-top: 2px; }
+  .brief-box .objective {
+    background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 4px; padding: 14px; margin-bottom: 20px;
+    font-size: 0.88rem; line-height: 1.7;
+  }
+  .brief-box .objective strong { color: var(--accent); }
+
+  /* RESULT SCREEN */
+  #result-screen { display: none; align-items: center; justify-content: center; min-height: calc(100vh - 58px); }
+  #result-screen.active { display: flex; }
+  .result-box {
+    text-align: center; max-width: 500px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 40px;
+  }
+  .result-box .grade {
+    font-family: 'Orbitron'; font-size: 4rem; font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .result-box .grade.pass { color: var(--success); text-shadow: 0 0 40px rgba(0,230,118,0.4); }
+  .result-box .grade.fail { color: var(--danger);  text-shadow: 0 0 40px rgba(255,59,59,0.4); }
+  .result-box h3 { font-family: 'Orbitron'; font-size: 1.1rem; margin-bottom: 16px; }
+  .result-box .summary { font-size: 0.9rem; color: var(--muted); line-height: 1.8; margin-bottom: 24px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+
+  /* Ticker at bottom */
+  #ticker {
+    background: #060c12; border-top: 1px solid var(--border);
+    padding: 5px 20px; font-family: 'Share Tech Mono'; font-size: 0.7rem;
+    color: var(--muted); overflow: hidden; white-space: nowrap;
+  }
+  #ticker-inner { display: inline-block; animation: scroll-ticker 30s linear infinite; }
+  @keyframes scroll-ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* Blowout overlay */
+  #blowout-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(255,0,0,0.08);
+    animation: blowout-flash 0.3s infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes blowout-flash { from{background:rgba(255,0,0,0.05)} to{background:rgba(255,0,0,0.2)} }
+
+  /* BOP status indicator */
+  .bop-visual {
+    display: flex; gap: 6px; margin-bottom: 8px;
+  }
+  .bop-indicator {
+    flex: 1; height: 28px; border-radius: 3px; border: 1px solid;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; letter-spacing: 1px; font-weight: 700;
+    transition: all 0.3s;
+  }
+  .bop-open   { color: var(--success); border-color: var(--success); background: rgba(0,230,118,0.08); }
+  .bop-closed { color: var(--danger);  border-color: var(--danger);  background: rgba(255,59,59,0.15); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div>
+    <h1>⬡ IWCF DRILLER SIMULATOR</h1>
+    <div class="sub">LEVEL 3 · WELL CONTROL TRAINING SYSTEM</div>
+  </div>
+  <div id="timer-box">⏱ 00:00</div>
+  <div id="score-box">
+    <div class="label">SESSION SCORE</div>
+    <div class="val" id="total-score">0 pts</div>
+  </div>
+</div>
+
+<!-- BLOWOUT OVERLAY -->
+<div id="blowout-overlay"></div>
+
+<!-- BOTTOM DECISION PANEL (always below sim, never blocks view) -->
+<div id="decision-panel">
+  <div id="dp-left">
+    <div id="dp-header" style="color:var(--muted)">MONITORING</div>
+    <div id="dp-countdown-row">
+      <div class="dp-cd-label">DECISION IN</div>
+      <div class="dp-cd-bar-wrap"><div class="dp-cd-bar" id="dp-cd-bar" style="width:100%"></div></div>
+      <div id="dp-cd-secs">30</div>
+    </div>
+    <div id="dp-question-text"></div>
+    <div id="dp-idle-msg">&#x1F4E1; Simulation running live &mdash; read the gauges and event log.<br>A decision question will appear after a short countdown.</div>
+  </div>
+  <div id="dp-right">
+    <div id="dp-options"></div>
+    <div id="dp-feedback">
+      <div id="dp-fb-title"></div>
+      <div id="dp-fb-why"></div>
+      <div id="dp-fb-calc"></div>
+      <button id="dp-continue-btn" onclick="dpContinue()">&#9654; CONTINUE</button>
+    </div>
+    <div id="dp-idle-right">Use the <strong style="color:var(--accent)">Control Panel</strong> to interact while observing.<br>Watch <strong style="color:var(--warn)">pit volume</strong> and <strong style="color:var(--warn)">casing pressure</strong> carefully.</div>
+  </div>
+</div>
+
+<!-- SCENARIO BRIEF MODAL -->
+<div id="brief-modal">
+  <div class="brief-box">
+    <h3>SCENARIO BRIEFING</h3>
+    <div class="scenario-name" id="brief-name">—</div>
+    <div class="brief-data" id="brief-data"></div>
+    <div class="objective" id="brief-obj"></div>
+    <button class="btn btn-primary" style="max-width:100%" onclick="startScenario()">▶ BEGIN SIMULATION</button>
+    <button class="btn btn-neutral" style="max-width:100%;margin-top:8px" onclick="closeBrief()">← BACK TO MENU</button>
+  </div>
+</div>
+
+<!-- MENU SCREEN -->
+<div id="menu-screen" class="screen active">
+  <div class="menu-hero">
+    <h2>WELL CONTROL TRAINING</h2>
+    <p>Immersive IWCF Level 3 (Driller) scenario simulator. Each scenario tests your decision-making in real-time drilling emergencies. Wrong decisions have consequences — just like on a real rig.</p>
+  </div>
+  <div class="scenario-grid" id="scenario-grid"></div>
+</div>
+
+<!-- SIM SCREEN -->
+<div id="sim-screen" class="screen">
+  <div id="sim-body">
+
+    <!-- LEFT: GAUGES -->
+    <div id="gauges-panel">
+      <div class="panel-title">LIVE PARAMETERS</div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">STANDPIPE PRESSURE</span>
+          <span><span class="value" id="g-spp">0</span><span class="unit">psi</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-spp" style="width:0%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">CASING PRESSURE</span>
+          <span><span class="value" id="g-casing">0</span><span class="unit">psi</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-casing" style="width:0%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">PIT VOLUME</span>
+          <span><span class="value" id="g-pit">340</span><span class="unit">bbl</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-pit" style="width:85%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">FLOW RATE OUT</span>
+          <span><span class="value" id="g-flow">0</span><span class="unit">gpm</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-flow" style="width:0%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">MUD WEIGHT (IN)</span>
+          <span><span class="value" id="g-mw">10.0</span><span class="unit">ppg</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-mw" style="width:50%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">MUD WEIGHT (OUT)</span>
+          <span><span class="value" id="g-mw-out">10.0</span><span class="unit">ppg</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-mw-out" style="width:50%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">PUMP STROKES/MIN</span>
+          <span><span class="value" id="g-spm">0</span><span class="unit">spm</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-spm" style="width:0%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">HOOK LOAD</span>
+          <span><span class="value" id="g-hook">180</span><span class="unit">klbs</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-hook" style="width:60%"></div></div>
+      </div>
+
+      <div class="gauge-group">
+        <div class="gauge-label">
+          <span class="name">CHOKE POSITION</span>
+          <span><span class="value" id="g-choke">100</span><span class="unit">%open</span></span>
+        </div>
+        <div class="gauge-bar"><div class="gauge-fill" id="gf-choke" style="width:100%"></div></div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:12px 0">
+      <div class="panel-title">BOP STATUS</div>
+      <div class="bop-visual">
+        <div class="bop-indicator bop-open" id="bop-ann">ANN</div>
+        <div class="bop-indicator bop-open" id="bop-ram">RAM</div>
+        <div class="bop-indicator bop-open" id="bop-blind">BLIND</div>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted)">Accumulator: <span id="acc-pres" style="color:var(--success);font-family:'Share Tech Mono'">3000</span> psi</div>
+    </div>
+
+    <!-- CENTER -->
+    <div id="center-panel">
+      <div id="rig-view">
+        <svg id="rig-svg" viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg">
+          <!-- Sky/ground -->
+          <rect width="600" height="260" fill="#060c12"/>
+          <rect y="200" width="600" height="60" fill="#0a1018"/>
+          <line x1="0" y1="200" x2="600" y2="200" stroke="#1e2d3d" stroke-width="1"/>
+          <!-- Derrick -->
+          <polygon points="280,20 320,20 310,160 290,160" fill="none" stroke="#1e3a50" stroke-width="1.5"/>
+          <line x1="280" y1="20" x2="290" y2="160" stroke="#1e3a50" stroke-width="1"/>
+          <line x1="320" y1="20" x2="310" y2="160" stroke="#1e3a50" stroke-width="1"/>
+          <line x1="282" y1="50" x2="318" y2="50" stroke="#1a2e40" stroke-width="1"/>
+          <line x1="284" y1="80" x2="316" y2="80" stroke="#1a2e40" stroke-width="1"/>
+          <line x1="286" y1="110" x2="314" y2="110" stroke="#1a2e40" stroke-width="1"/>
+          <line x1="288" y1="140" x2="312" y2="140" stroke="#1a2e40" stroke-width="1"/>
+          <!-- Crown block -->
+          <rect x="286" y="16" width="28" height="8" fill="#1e3a50" stroke="#2a4f6a" stroke-width="1"/>
+          <!-- Traveling block -->
+          <rect id="trav-block" x="291" y="70" width="18" height="12" fill="#1a3040" stroke="#00d4ff" stroke-width="1"/>
+          <!-- Hook/swivel -->
+          <line id="hook-line" x1="300" y1="82" x2="300" y2="120" stroke="#1e3a50" stroke-width="2"/>
+          <!-- Kelly/top drive -->
+          <rect x="294" y="118" width="12" height="22" fill="#1a3040" stroke="#2a5070" stroke-width="1"/>
+          <!-- Drill string (surface) -->
+          <rect x="297" y="140" width="6" height="60" fill="#1a3040" stroke="#2a4f6a" stroke-width="0.5"/>
+          <!-- Rotary table -->
+          <ellipse cx="300" cy="200" rx="30" ry="6" fill="#0f1e2c" stroke="#1e3a50" stroke-width="1.5"/>
+          <!-- BOP stack -->
+          <rect x="282" y="200" width="36" height="14" rx="2" fill="#0a1624" stroke="#1e3a50" stroke-width="1.5" id="bop-rect"/>
+          <rect x="282" y="214" width="36" height="10" rx="1" fill="#0a1624" stroke="#1e3a50" stroke-width="1"/>
+          <!-- Choke/kill lines -->
+          <line x1="318" y1="207" x2="360" y2="207" stroke="#1a2e40" stroke-width="2"/>
+          <line x1="282" y1="207" x2="240" y2="207" stroke="#1a2e40" stroke-width="2"/>
+          <rect x="354" y="202" width="20" height="10" rx="2" fill="#0f1e2c" stroke="#1e3a50" id="choke-rect"/>
+          <!-- Pit tank -->
+          <rect x="480" y="160" width="80" height="40" rx="3" fill="#0a1624" stroke="#1e3a50" stroke-width="1.5"/>
+          <rect x="484" y="164" width="72" height="32" rx="2" fill="#060c12" id="pit-fill-rect"/>
+          <text x="520" y="183" text-anchor="middle" fill="#4a6070" font-size="9" font-family="Share Tech Mono">PIT</text>
+          <!-- Pit level bar -->
+          <rect x="484" y="164" width="72" height="0" rx="2" fill="rgba(0,212,255,0.3)" id="pit-level-bar" transform="translate(0,32) scale(1,-1) translate(0,-196)"/>
+          <!-- Mud pump -->
+          <rect x="30" y="160" width="60" height="40" rx="3" fill="#0a1624" stroke="#1e3a50" stroke-width="1.5"/>
+          <text x="60" y="183" text-anchor="middle" fill="#4a6070" font-size="8" font-family="Share Tech Mono">MUD PUMP</text>
+          <circle cx="60" cy="175" r="8" fill="none" stroke="#1e3a50" stroke-width="1.5" id="pump-circle"/>
+          <!-- Pump to standpipe line -->
+          <path d="M 90 175 Q 200 175 240 190" fill="none" stroke="#1a2e40" stroke-width="2"/>
+          <!-- Formation layers underground -->
+          <rect x="240" y="224" width="120" height="36" fill="none" stroke="#162030" stroke-width="0.5"/>
+          <!-- Kick bubble indicator -->
+          <circle id="kick-bubble" cx="300" cy="240" r="0" fill="rgba(255,179,0,0.4)" stroke="#ffb300" stroke-width="1"/>
+          <!-- Gas plume (blowout) -->
+          <ellipse id="gas-plume" cx="300" cy="30" rx="0" ry="0" fill="rgba(255,59,59,0.3)" stroke="#ff3b3b" stroke-width="1"/>
+          <!-- Labels -->
+          <text x="300" y="13" text-anchor="middle" fill="#4a6070" font-size="7" font-family="Rajdhani">CROWN BLOCK</text>
+          <text x="300" y="195" text-anchor="middle" fill="#4a6070" font-size="7" font-family="Rajdhani">ROTARY TABLE</text>
+          <text x="60" y="155" text-anchor="middle" fill="#4a6070" font-size="7" font-family="Rajdhani">PUMP #1</text>
+          <text x="520" y="156" text-anchor="middle" fill="#4a6070" font-size="7" font-family="Rajdhani">MUD PITS</text>
+        </svg>
+        <div class="rig-status normal" id="rig-status-badge">NORMAL OPERATIONS</div>
+      </div>
+
+      <!-- EVENT LOG -->
+      <div id="event-log">
+        <div style="font-family:'Orbitron';font-size:0.6rem;letter-spacing:3px;color:var(--muted);margin-bottom:10px">EVENT LOG</div>
+        <div id="log-entries"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CONTROLS -->
+    <div id="controls-panel">
+      <div class="panel-title">DRILLER CONTROL PANEL</div>
+
+      <div class="control-section" id="pump-controls">
+        <div class="control-section-title">MUD PUMPS</div>
+        <button class="btn btn-toggle btn-primary" id="btn-pump" onclick="action('togglePump')">
+          <span class="toggle-dot" id="dot-pump"></span> MUD PUMP #1
+        </button>
+        <div class="slider-row">
+          <label>PUMP RATE <span id="lbl-spm">60 spm</span></label>
+          <input type="range" min="20" max="100" value="60" id="sl-spm"
+                 oninput="setSPM(this.value)">
+        </div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">CHOKE MANIFOLD</div>
+        <div class="slider-row">
+          <label>CHOKE OPENING <span id="lbl-choke">100%</span></label>
+          <input type="range" min="0" max="100" value="100" id="sl-choke"
+                 oninput="setChoke(this.value)">
+        </div>
+        <button class="btn btn-warn" onclick="action('fullCloseChoke')">⬛ FULLY CLOSE CHOKE</button>
+        <button class="btn btn-primary" onclick="action('fullOpenChoke')">⬜ FULLY OPEN CHOKE</button>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">BOP STACK</div>
+        <button class="btn btn-toggle btn-danger" id="btn-ann" onclick="action('toggleAnnular')">
+          <span class="toggle-dot" id="dot-ann"></span> ANNULAR BOP
+        </button>
+        <button class="btn btn-toggle btn-danger" id="btn-ram" onclick="action('toggleRam')">
+          <span class="toggle-dot" id="dot-ram"></span> PIPE RAM
+        </button>
+        <button class="btn btn-toggle btn-danger" id="btn-blind" onclick="action('toggleBlind')">
+          <span class="toggle-dot" id="dot-blind"></span> BLIND/SHEAR RAM
+        </button>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">WELL OPERATIONS</div>
+        <button class="btn btn-warn" onclick="action('POOH')">▲ PULL OUT OF HOLE</button>
+        <button class="btn btn-primary" onclick="action('RIH')">▼ RUN IN HOLE</button>
+        <button class="btn btn-neutral" onclick="action('stageCement')">⬡ STAGE CEMENT JOB</button>
+        <button class="btn btn-success" onclick="action('circulate')">↺ CIRCULATE BOTTOMS UP</button>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">KILL OPERATIONS</div>
+        <button class="btn btn-success" onclick="action('drillerMethod')">🔵 DRILLER'S METHOD</button>
+        <button class="btn btn-success" onclick="action('waitWeight')">🟢 WAIT & WEIGHT</button>
+        <button class="btn btn-warn" onclick="action('weightUp')">⬆ WEIGHT UP MUD</button>
+        <button class="btn btn-neutral" onclick="action('shutInDP')">🔒 SHUT-IN (Record SIDPP)</button>
+        <button class="btn btn-neutral" onclick="action('shutInCsg')">🔒 SHUT-IN (Record SICP)</button>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">CALCULATIONS</div>
+        <button class="btn btn-neutral" onclick="showCalc()">📐 SHOW KILL SHEET</button>
+        <button class="btn btn-neutral" onclick="action('checkMAAP')">📊 CHECK MAASP</button>
+      </div>
+
+      <div class="control-section">
+        <div class="control-section-title">SCENARIO</div>
+        <button class="btn btn-danger" onclick="endScenario(false)">✕ ABANDON SCENARIO</button>
+        <button class="btn btn-neutral" onclick="goMenu()">← MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ticker">
+    <div id="ticker-inner">
+      IWCF LEVEL 3 TRAINING SIMULATOR &nbsp;|&nbsp;
+      ALWAYS SHUT IN AND RECORD SIDPP/SICP BEFORE ANY KILL OPERATION &nbsp;|&nbsp;
+      KILL MUD WEIGHT = ORIGINAL MW + (SIDPP ÷ (0.052 × TVD)) &nbsp;|&nbsp;
+      MAASP = LEAK-OFF TEST EQUIVALENT MUD WEIGHT × 0.052 × SHOE DEPTH – HYDROSTATIC PRESSURE &nbsp;|&nbsp;
+      DRILLER'S METHOD: TWO CIRCULATIONS — FIRST CIRCULATE KICK OUT, SECOND CIRCULATE KILL MUD &nbsp;|&nbsp;
+      WAIT & WEIGHT: SINGLE CIRCULATION WITH KILL MUD WEIGHTED UP FIRST &nbsp;|&nbsp;
+      IWCF LEVEL 3 TRAINING SIMULATOR &nbsp;|&nbsp; ALWAYS SHUT IN AND RECORD SIDPP/SICP BEFORE ANY KILL OPERATION
+    </div>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="result-screen" class="screen">
+  <div class="result-box">
+    <div class="grade" id="result-grade">A</div>
+    <h3 id="result-title">SCENARIO COMPLETE</h3>
+    <div class="summary" id="result-summary"></div>
+    <button class="btn btn-primary" style="max-width:100%;margin-bottom:8px" onclick="goMenu()">← MAIN MENU</button>
+    <button class="btn btn-neutral" style="max-width:100%" onclick="replayScenario()">↺ REPLAY SCENARIO</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// SCENARIO DEFINITIONS
+// ═══════════════════════════════════════════════════════════════════
+const SCENARIOS = [
+  {
+    id: 'kick-detection',
+    name: 'Kick Detection — Gas Influx',
+    difficulty: 'easy',
+    brief: {
+      depth: '8,500 ft TVD',
+      mw: '10.0 ppg',
+      formation: 'Sandstone — Pore Pressure 10.8 ppg equivalent',
+      rop: '45 ft/hr',
+    },
+    objective: `You are drilling ahead at 8,500 ft. You notice the <strong>pit volume increasing by 2 bbl</strong> over the last 5 minutes. Flow return appears slightly higher than pump input. Your task is to <strong>recognize the kick warning signs</strong> and take the correct initial action.`,
+    kickSize: 10,
+    sidpp: 350, sicp: 420,
+    tvd: 8500, mwIn: 10.0, shoeDepth: 6000, lotEMW: 14.5,
+    pumpRate: 60,
+    steps: [
+      {
+        prompt: 'You notice a 2 bbl pit gain and increased flow return with pumps running. What is your FIRST action?',
+        options: [
+          { text: 'Stop rotary, pick up off bottom, shut down pumps',       correct: false, why: 'Picking up without shutting in risks swabbing more influx in. The FIRST step is to stop drilling — but the crucial next step is to SHUT IN, not just pick up.', calc: null },
+          { text: 'Stop rotary, pick up to safety valve position, shut in well (flow check)',   correct: true,  why: 'Correct! STOP — OBSERVE — SHUT IN. Once a kick indicator is detected, stop drilling, pick up above rotary, perform a flow check, and if flow is confirmed, shut in using the annular BOP. Never keep drilling with a kick!', calc: 'Pit Gain = 2 bbl → Kick Volume detected\nFlow Check: YES FLOW = KICK CONFIRMED\nAction: SHUT IN immediately' },
+          { text: 'Increase pump rate to push influx back',                  correct: false, why: 'WRONG — Increasing pump rate increases ECD (Equivalent Circulating Density) momentarily but does NOT kill the kick. It may fracture the formation or cause a blowout. Never try to "pump a kick back" without proper well control procedures.' },
+          { text: 'Add more mud weight immediately',                         correct: false, why: 'Weighting up mud takes time. With an active kick, the IMMEDIATE action is SHUT IN. You cannot weight mud up fast enough to stop an active influx. Shut in first, calculate kill weight, then weight up.' },
+        ]
+      },
+      {
+        prompt: 'Well is shut in. SIDPP reads 350 psi, SICP reads 420 psi. What do you calculate as kill mud weight?',
+        options: [
+          { text: '10.8 ppg — same as pore pressure equivalent',    correct: false, why: 'Pore pressure equivalent can be derived from SIDPP but is not the same as kill mud weight. Kill MW must provide overbalance to the pore pressure.' },
+          { text: '10.79 ppg (round up to 10.8 ppg)',               correct: true,  why: 'Correct! Kill Mud Weight formula gives you exactly this. Always round UP to the nearest 0.1 ppg for safety margin.', calc: 'Kill MW = Original MW + (SIDPP ÷ (0.052 × TVD))\nKill MW = 10.0 + (350 ÷ (0.052 × 8500))\nKill MW = 10.0 + (350 ÷ 442)\nKill MW = 10.0 + 0.79 = 10.79 ppg → Round to 10.8 ppg' },
+          { text: '11.5 ppg — add extra safety margin of 0.5 ppg', correct: false, why: 'Adding arbitrary extra weight risks fracturing the formation at the casing shoe. The calculated kill weight is precisely what is needed. Excess weight = fracture risk = lost circulation = blowout.' },
+          { text: '10.0 ppg — no change needed, just circulate',    correct: false, why: 'Circulating with the original 10.0 ppg mud will NOT kill the well. The pore pressure is higher than the hydrostatic of 10.0 ppg mud, which is why the kick occurred. Kill weight MUST be higher.' },
+        ]
+      },
+      {
+        prompt: 'Kill MW is 10.8 ppg. You choose Driller\'s Method. What is the correct sequence?',
+        options: [
+          { text: 'Circulate kick out with original 10.0 ppg mud, then circulate with 10.8 ppg kill mud', correct: true,  why: "Correct! That's exactly Driller's Method — TWO circulations. First: circulate the influx out keeping constant BHP. Second: circulate kill mud down, displacing original mud. Maintain constant casing pressure on first circ, constant drill pipe pressure on second.", calc: "Driller's Method:\nCirc 1: Pump at SCR, hold CASING pressure constant\n  → Circulate influx out of wellbore\nCirc 2: Pump kill mud, hold DRILL PIPE pressure constant\n  → Use pressure schedule to reduce DP pressure as kill mud fills string\nCheck: When kill mud reaches bit, DP pressure = kill circ pressure" },
+          { text: 'Weight mud to 10.8 ppg first, then circulate in one pass',           correct: false, why: "That's Wait & Weight method, not Driller's Method. Both are valid — you need to choose one and stick to it. For this scenario, Driller's Method means using current-weight mud for first circ." },
+          { text: 'Open choke slowly and bleed off pressure, then resume drilling',      correct: false, why: "NEVER bleed off casing pressure without a kill operation in progress. Bleeding off reduces bottom-hole pressure, allowing MORE influx to enter. This is a critical error that can lead to blowout." },
+          { text: 'Bullhead kill mud down the annulus at high pressure',                 correct: false, why: "Bullheading is a specialized operation, not standard Driller's Method. In most kick situations, bullheading risks fracturing the shoe and is only used when pipe cannot be moved (stuck pipe, etc.)." },
+        ]
+      }
+    ]
+  },
+
+  {
+    id: 'lost-circ',
+    name: 'Lost Circulation Event',
+    difficulty: 'easy',
+    brief: {
+      depth: '7,200 ft TVD',
+      mw: '11.5 ppg',
+      formation: 'Fractured Limestone',
+      rop: '30 ft/hr',
+    },
+    objective: `While drilling, you observe a <strong>sudden drop in pit volume by 8 bbl</strong> in 10 minutes. Flow returns decrease but pumps are running normally. There is <strong>NO return flow increase</strong>. Identify lost circulation and take correct action.`,
+    kickSize: 0,
+    sidpp: 0, sicp: 0,
+    tvd: 7200, mwIn: 11.5, shoeDepth: 5500, lotEMW: 14.0,
+    pumpRate: 55,
+    steps: [
+      {
+        prompt: 'Pit volume drops 8 bbl. Flow return decreases. Pump pressure is normal. What is happening?',
+        options: [
+          { text: 'Gas kick — the influx is reducing hydrostatic and reducing apparent weight', correct: false, why: 'In a kick, pit volume INCREASES and flow returns INCREASE. Decreasing pit with decreasing returns — while pumps run normally — indicates mud is going INTO the formation, not formation fluids coming out.' },
+          { text: 'Lost circulation — mud is entering natural fractures or voids in the formation', correct: true,  why: 'Correct! Classic lost circulation signature: pit volume DROPS, flow returns REDUCE or stop, but pump pressure may remain normal (partial loss) or drop (complete loss). The formation is accepting mud faster than you are pumping.', calc: 'Lost Circ Volume = 8 bbl lost in 10 min\nLoss Rate = 0.8 bbl/min = 48 bbl/hr\nClassification: PARTIAL LOSS (some return still present)\nSeverity: MODERATE (> 5 bbl/hr threshold)' },
+          { text: 'Swabbing — the drill string is pulling formation fluids in', correct: false, why: 'Swabbing occurs during pipe movement (POOH) when the pipe acts like a piston and reduces bottom-hole pressure. Swab kicks show pit gain (fluids coming in), not pit loss. The pumps running normally rule this out.' },
+          { text: 'Bit wash — mud is bypassing due to a washed-out bit nozzle', correct: false, why: 'A washed bit would change pump pressure significantly (usually a drop) and would not cause pit volume loss. You would see reduced drill rates and abnormal pressure response, but not pit level drop.' },
+        ]
+      },
+      {
+        prompt: 'Lost circulation confirmed. What is your FIRST corrective action?',
+        options: [
+          { text: 'Reduce pump rate to slow the loss rate, then mix LCM pill', correct: true,  why: 'Correct! Reducing pump rate reduces ECD (Equivalent Circulating Density) and wellbore pressure, which reduces or stops the loss. Then spot a Lost Circulation Material (LCM) pill: fibrous, flaky, or granular material to bridge the fractures.', calc: 'ECD = MW + (P_annular ÷ (0.052 × TVD))\nReducing SPM → Lower ECD → Less fracture pressure\nLCM Types:\n  Fibrous: nut shells, wood fibres\n  Flake: cellophane\n  Granular: calcium carbonate\nSpot LCM pill across loss zone' },
+          { text: 'Increase pump rate to maintain hydrostatic column',       correct: false, why: 'Increasing pump rate INCREASES ECD, which further opens fractures and worsens the loss. This is the opposite of what you want. Higher pump rate = more pressure = wider fractures = more loss.' },
+          { text: 'Immediately mix heavier mud to increase hydrostatic',     correct: false, why: 'Heavier mud increases hydrostatic pressure which increases formation pressure differential — this will WORSEN lost circulation. You do not fight lost circulation with heavier mud. Use LCM and reduce ECD.' },
+          { text: 'Shut in BOP and pressure test the casing',               correct: false, why: 'Shutting in is for KICKS, not lost circulation. With lost circulation, there is no influx to shut in — shutting BOPs would trap pressure that could worsen the situation. You need to address the loss, not shut in.' },
+        ]
+      },
+    ]
+  },
+
+  {
+    id: 'swab-kick',
+    name: 'Swab Kick During Tripping',
+    difficulty: 'medium',
+    brief: {
+      depth: '9,800 ft TVD (bit depth when POOH started)',
+      mw: '10.2 ppg',
+      formation: 'Tight Sand — Pore Pressure 10.6 ppg',
+      rop: 'N/A — Tripping out',
+    },
+    objective: `You are pulling out of hole (POOH) after coring. After pulling 10 stands, you <strong>observe 4 bbl pit gain</strong> and see the well is <strong>flowing back</strong> without pumps running. A swab kick has occurred. React correctly.`,
+    kickSize: 12,
+    sidpp: 280, sicp: 350,
+    tvd: 9800, mwIn: 10.2, shoeDepth: 7000, lotEMW: 13.8,
+    pumpRate: 50,
+    steps: [
+      {
+        prompt: 'Pit gain is 4 bbl with no pumps running while POOH. Well is flowing. What caused this?',
+        options: [
+          { text: 'Swabbing — upward pipe movement reduced BHP below pore pressure, causing influx', correct: true,  why: 'Correct! When pulling pipe, the drill string acts as a piston. If pulled too fast or if mud properties are poor (high gel strength/viscosity), it creates a pressure drop (swab pressure) that can reduce BHP below pore pressure — allowing formation fluids to enter.', calc: 'Swab Pressure ≈ increases with:\n  - Pipe pulling speed (faster = more swab)\n  - Mud viscosity / gel strength\n  - Annular clearance (smaller = more swab)\nFormula (simplified): Psw = K × v^n (power law)\nResult: BHP_eff = Hydrostatic – Psw < Pore Pressure → KICK' },
+          { text: 'Formation pressure increased suddenly due to fault crossing', correct: false, why: 'While faults can cause pressure transitions, this scenario clearly shows the kick was induced by pipe movement (POOH). The timing — kick occurring while pulling pipe — is the key diagnostic of a swab kick.' },
+          { text: 'Cement job failure — previous casing shoe leaking', correct: false, why: 'Cement shoe failure would typically show low MAASP, lost circ at shoe, and would not correlate directly with pipe pulling speed. The evidence here points to swabbing.' },
+          { text: 'Bit balling — mud cake stuck to bit reducing flow', correct: false, why: 'Bit balling affects drilling performance and penetration rate. It does not cause pit gain or well flow. Bit balling is a drilling mechanics issue, not a well control issue.' },
+        ]
+      },
+      {
+        prompt: 'Well is flowing with 4 bbl pit gain. What is the IMMEDIATE action sequence?',
+        options: [
+          { text: 'Set pipe at safety valve position, do not re-enter, notify company man',   correct: false, why: 'Notifying company man is important, but the IMMEDIATE action to stop flow is shutting in. Every second of delay means more influx in the well. Shut in FIRST, then notify.' },
+          { text: 'Space out, set slips, pick up safety valve, stab in, close safety valve, close annular BOP', correct: true,  why: 'Correct! This is the standard POOH well kick procedure. Space out to get a tool joint above rotary, set slips, stab in the full-opening safety valve (FOSV), close it, then close the annular BOP. Record SIDPP and SICP.', calc: 'Post Shut-In:\n  SIDPP = 280 psi (shut-in drill pipe pressure)\n  SICP  = 350 psi (shut-in casing pressure)\n  Kick Volume ≈ 4 bbl (pit gain)\n  Kill MW = 10.2 + (280 ÷ (0.052 × 9800))\n           = 10.2 + 0.55 = 10.75 → 10.8 ppg' },
+          { text: 'Trip back to bottom immediately, then shut in',          correct: false, why: 'Tripping BACK IN with a kick is dangerous — the influx may migrate upward as you run in, and running through the kick zone risks additional influx. SHUT IN first. After kill operations, then consider going back to bottom.' },
+          { text: 'Start pump at full rate to flush the kick out',          correct: false, why: 'Starting at full pump rate without closing the BOP first will pump uncontrolled fluid at surface. You cannot control the well without first SHUTTING IN. Never start kill operations without the well shut in.' },
+        ]
+      },
+      {
+        prompt: 'Well is shut in. SIDPP = 280 psi. There are 10 stands of pipe out of hole. What is the plan?',
+        options: [
+          { text: 'Strip back to bottom while maintaining bottom hole pressure, then kill well',  correct: true,  why: 'Correct! With the string off bottom, you need to strip back to bottom (run in with BOP closed, maintaining constant casing pressure) to be in position to circulate the kick out. Then apply Driller\'s or Wait & Weight method.', calc: 'Stripping: Run in hole with Annular BOP closed\n  Maintain: Casing pressure ≈ SICP = 350 psi\n  As pipe goes in → BHP increases → bleed choke slowly\n  Goal: Maintain constant BHP throughout\n  When at bottom → begin kill circulation' },
+          { text: 'Kill from current depth — pump kill mud down partial string', correct: false, why: 'With 10 stands out, you are likely 300+ ft off bottom. Pumping kill mud will not reach the kick zone effectively. The kill mud will take longer to displace the influx, and kill calculations are unreliable off-bottom.' },
+          { text: 'Bleed off all casing pressure and pump heavy mud down quickly', correct: false, why: 'Bleeding casing pressure REDUCES bottom-hole pressure, allowing MORE influx to enter. This is a critical mistake. Casing pressure represents the margin being held against the formation — never bleed it without replacing with kill mud weight.' },
+          { text: 'Wait 4 hours for influx to stabilize, then kill',           correct: false, why: 'Gas kicks MIGRATE — gas is buoyant and will rise in the wellbore even without circulation. As gas migrates, casing pressure INCREASES. Waiting without taking action allows pressures to build dangerously. Act now.' },
+        ]
+      }
+    ]
+  },
+
+  {
+    id: 'gas-migration',
+    name: 'Gas Migration Under Shut-In',
+    difficulty: 'medium',
+    brief: {
+      depth: '10,200 ft TVD',
+      mw: '10.5 ppg',
+      formation: 'Gas sand — Pore Pressure 11.0 ppg',
+      rop: 'N/A — Well Shut In',
+    },
+    objective: `Your well is shut in with a gas kick. SIDPP = 400 psi, SICP = 520 psi. It has been 1 hour since shut-in. You now notice <strong>casing pressure is rising steadily</strong> (currently 680 psi and climbing) but <strong>drill pipe pressure has NOT changed</strong> (still 400 psi). What is happening and what must you do?`,
+    kickSize: 15,
+    sidpp: 400, sicp: 680,
+    tvd: 10200, mwIn: 10.5, shoeDepth: 7500, lotEMW: 14.2,
+    pumpRate: 50,
+    steps: [
+      {
+        prompt: 'SICP is rising (400 → 680 psi in 1 hour), SIDPP unchanged at 400 psi. What does this indicate?',
+        options: [
+          { text: 'Formation pressure is increasing — the reservoir is being replenished',         correct: false, why: 'SIDPP remaining constant means drill pipe side BHP is unchanged. Formation pressure has not increased. Drill pipe pressure would also increase if pore pressure rose.' },
+          { text: 'Gas migration — the gas bubble is rising, losing hydrostatic head, causing casing pressure build-up', correct: true,  why: 'Correct! Gas is buoyant. As the gas bubble migrates UP the annulus, it loses the hydrostatic head it was providing. To maintain BHP balance, casing pressure INCREASES. SIDPP stays constant because the drill string mud column is not changing. This is gas migration.', calc: 'Gas Migration Rate ≈ 1,000 – 2,000 ft/hr (typical)\nAs gas moves up by ΔH ft:\n  Hydrostatic lost = 0.052 × MW × ΔH\n  → Casing pressure MUST increase by same amount\n  to maintain constant BHP\n\nCurrent SICP rise: +160 psi in 1 hr\nEquiv. MW column lost: 160 ÷ (0.052 × 10200) ≈ 0.30 ppg equiv.' },
+          { text: 'Choke is leaking — pressure bleed-off on drill pipe side is creating differential', correct: false, why: 'A leaking choke would cause pressure loss on the casing side (SICP would DROP, not rise). SIDPP remaining stable while SICP rises is the diagnostic signature of gas migration, not a choke leak.' },
+          { text: 'Annular BOP is leaking — pressure communicating between annulus and surface', correct: false, why: 'A leaking BOP would cause pressure loss from the annulus (SICP would drop) or visible surface leakage. Rising SICP indicates BUILD-UP of pressure, not a leak.' },
+        ]
+      },
+      {
+        prompt: 'SICP is now 720 psi and rising. MAASP is 850 psi. You must act. What do you do?',
+        options: [
+          { text: 'Lubricate the well — pump small volumes of kill mud, bleed equivalent gas to surface', correct: true,  why: 'Correct! Lubrication is the correct technique for managing gas migration. Pump a small slug of heavy mud, let it fall to bottom, then bleed gas off from the top to reduce casing pressure. Repeat until gas is removed. This maintains BHP while bleeding gas safely.', calc: 'Lubrication technique:\n1. Pump X bbls kill mud into annulus\n2. Wait 10–15 min for mud to fall, gas to rise\n3. Bleed X bbls gas until pressure drops back\n4. Target: bleed pressure drop = hydrostatic gain\n   ΔP_bleed = 0.052 × KMW × X bbls / annular cap.\n5. Repeat until SICP = SIDPP (single pressure)' },
+          { text: 'Bleed all casing pressure off to reduce risk of fracturing the shoe',        correct: false, why: 'NEVER bleed off casing pressure without replacing the hydrostatic. Bleeding reduces BHP below pore pressure, allowing massive additional influx. With only 130 psi of headroom to MAASP, you need to manage pressure, not eliminate it.' },
+          { text: 'Wait — the gas will eventually reach surface on its own and disperse',        correct: false, why: 'Waiting passively allows casing pressure to approach and exceed MAASP (850 psi). When MAASP is exceeded, formation at casing shoe fractures — creating an underground blowout. You must act BEFORE that point.' },
+          { text: 'Start Driller\'s Method immediately — pump at full rate',                    correct: false, why: 'You MUST know where your kill pump rate slow circulating rate pressure is before beginning kill operations. Starting at full pump rate without this data risks exceeding MAASP. Lubricate first to safely reduce SICP, then plan the kill properly.' },
+        ]
+      }
+    ]
+  },
+
+  {
+    id: 'shallow-gas',
+    name: 'Shallow Gas Event',
+    difficulty: 'hard',
+    brief: {
+      depth: '800 ft TVD — Spud Well (Conductor Pipe Only)',
+      mw: '8.6 ppg (seawater + bentonite)',
+      formation: 'Biogenic gas pocket — UNPREDICTABLE',
+      rop: '150 ft/hr (fast drilling)',
+    },
+    objective: `You are drilling the surface hole section at 800 ft with only conductor pipe set at 100 ft. Suddenly <strong>gas cut mud returns appear</strong>, pit gain of 6 bbl in 2 minutes, and you can <strong>smell H2S</strong>. A shallow gas event is in progress. <strong>There is NO BOP on this conductor.</strong> Act appropriately.`,
+    kickSize: 20,
+    sidpp: 0, sicp: 0,
+    tvd: 800, mwIn: 8.6, shoeDepth: 100, lotEMW: 9.2,
+    pumpRate: 80,
+    steps: [
+      {
+        prompt: 'Shallow gas with NO BOP, gas-cut returns, 6 bbl gain in 2 min. What is the priority?',
+        options: [
+          { text: 'Personnel safety: muster alarm, evacuate non-essential personnel, H2S procedures', correct: true,  why: 'CORRECT and CRITICAL! Shallow gas events with H2S can be lethal within minutes. With no BOP installed, you CANNOT shut in the well. The ONLY option is to manage flow (divert if diverter is installed) and protect personnel. Human life > equipment > well.', calc: 'Shallow Gas Hazards:\n  1. H2S: TLV-C = 10 ppm (immediately dangerous: >100 ppm)\n  2. Fire/explosion: LEL = 5% gas in air\n  3. No BOP = cannot shut in\n  4. Conductor shoe at 100 ft is very shallow — cannot hold pressure\n\nDiverter (if fitted): Opens flow to atmosphere at a safe location\nIf no diverter: Maintain pump, maximize flow rate to keep gas moving' },
+          { text: 'Close annular BOP to shut in the well and build pressure',           correct: false, why: 'There is NO BOP on this conductor. Even if there were, closing a BOP on a shallow gas kick with 100 ft of conductor risks FRACTURING the formation immediately (very low fracture gradient at 100 ft), causing underground blowout and cratering around the wellbore.' },
+          { text: 'Pump heavier mud immediately to kill the influx',                    correct: false, why: 'There is no time to mix and pump kill mud in 2 minutes of shallow gas. You cannot control a shallow gas blowout by mud weight alone without BOP pressure control. Personnel safety must come first.' },
+          { text: 'Keep drilling ahead as fast as possible to get below the gas zone',  correct: false, why: 'Drilling faster into an active blowout is extremely dangerous. Gas flow will increase, H2S risk escalates, and the drill floor is not safe to operate on. Stop drilling, protect people.' },
+        ]
+      },
+      {
+        prompt: 'Non-essential personnel evacuated. Gas is flowing to surface. You have a diverter system. What do you do?',
+        options: [
+          { text: 'Open diverter to direct gas flow downwind away from the rig, maintain pump rate', correct: true,  why: 'Correct! The diverter system is designed exactly for this scenario. It diverts well flow (gas + mud) away from the rig through a line to a safe flare point or to sea. Maintain pump circulation to help prevent the gas from stalling and accumulating under the rig floor.', calc: 'Diverter Procedure:\n1. Open diverter line (downwind side)\n2. Close rotating head / diverter\n3. Maintain or increase pump rate\n4. Flow goes: Well → Diverter → Diverter Line → Safe Point\n5. Do NOT try to close/shut in — only divert\n6. Monitor for cratering / subsidence around well' },
+          { text: 'Close diverter and shut in — treat same as deep well kick',          correct: false, why: 'WRONG. Closing the diverter to shut in a shallow gas well can build enough pressure to fracture the shallow formation, causing cratering (ground subsidence/collapse around the well) and a catastrophic surface blowout. Diverter = DIVERT, not shut in.' },
+          { text: 'Rig down top drive and use rotary table to drill through gas zone fast', correct: false, why: 'Drilling operations should STOP during a gas event at surface. Rig floor personnel are exposed to H2S and fire hazard. Do not place people in danger by continuing drilling operations.' },
+          { text: 'Pump seawater/fresh water at maximum rate to dilute gas cut mud',    correct: false, why: 'Pumping fresh water rapidly can destabilize formations and does not address the gas. Using the diverter system is the engineered solution. Dilution of gas cut mud does not stop the gas influx from the formation.' },
+        ]
+      },
+      {
+        prompt: 'Gas flow has reduced. Mud returns look cleaner. What do you do next?',
+        options: [
+          { text: 'Resume drilling cautiously while monitoring for further gas shows',      correct: false, why: 'Gas show reduction does not mean the zone is fully penetrated. Resuming normal drilling immediately is premature. The area needs to be made safe, equipment checked, and a decision made by the company man and drilling supervisor.' },
+          { text: 'Shut down, make area safe, check equipment, notify company/operator, log event', correct: true,  why: 'Correct! After a gas event, even when flow reduces: make the well safe (diverter in place), clear the rig floor, ventilate, check all equipment for damage, and conduct a full review before any further operations. ALL well control incidents must be formally recorded and investigated.', calc: 'Post-Event Checklist:\n✓ H2S monitor readings normal (<1 ppm)\n✓ No visible gas at surface\n✓ Pit volume stabilized\n✓ Equipment inspected\n✓ Incident report filed\n✓ Company man / OIM notified\n✓ Regulatory notification (if required)\n✓ Resume only with approval' },
+          { text: 'Remove diverter and run BOP immediately to prevent future events',    correct: false, why: 'BOP installation requires rigging up carefully according to the well program. You cannot rush BOP installation without proper procedure. The well must be stable and personnel must be safe before rigging operations resume.' },
+          { text: 'Displace well with heavier mud 12 ppg to prevent recurrence',        correct: false, why: 'Heavier mud in a shallow section (800 ft) with uncertain fracture gradient could cause lost circulation and worsen the situation. Mud weight changes require engineering assessment. The immediate priority is safety, not mud engineering.' },
+        ]
+      }
+    ]
+  },
+
+  {
+    id: 'blowout-risk',
+    name: 'Blowout Prevention — Critical Decision',
+    difficulty: 'hard',
+    brief: {
+      depth: '11,500 ft TVD',
+      mw: '11.2 ppg',
+      formation: 'HP/HT Reservoir — Pore Pressure 12.1 ppg',
+      rop: 'N/A — Well Shut In, Kill in Progress',
+    },
+    objective: `Driller's Method Circulation 1 is in progress. Kick is circulating out. Casing pressure is 780 psi. MAASP is 820 psi. Suddenly <strong>pump pressure drops 400 psi and pit volume starts increasing rapidly</strong>. You suspect a WASHOUT or catastrophic equipment failure. Multiple alarms are active.`,
+    kickSize: 25,
+    sidpp: 480, sicp: 780,
+    tvd: 11500, mwIn: 11.2, shoeDepth: 8000, lotEMW: 14.5,
+    pumpRate: 45,
+    steps: [
+      {
+        prompt: 'During kill circulation: pump pressure drops 400 psi suddenly, pit gain accelerating. What happened?',
+        options: [
+          { text: 'Drill string washout — pressure escaping through hole in pipe, reducing effective pump pressure', correct: true,  why: 'Correct! A sudden large drop in pump (standpipe) pressure during circulation, with no change in pump speed, typically indicates a drill string washout (hole in the drill pipe or bit). Mud is now bypassing through the washout, reducing ECD at the bit, and the formation is flowing faster.', calc: 'Drill String Washout Signs:\n  ✗ SPP drops suddenly (400 psi drop = major washout)\n  ✗ Pit gain increases (less effective mud pumped to bottom)\n  ✗ Flow rate out > pump rate in (formation contributing)\n  ✗ ROP may increase (less hydraulic pressure on formation)\n\nRisk: Without proper BHP, blowout imminent\nAction: SHUT IN — do not try to continue with washout' },
+          { text: 'Pump failure — one pump cylinder failed, reducing output',             correct: false, why: 'A single cylinder pump failure causes a partial pressure drop (typically 15-25% of pump pressure), not a sudden 400 psi drop. And pump failure would not explain the pit gain acceleration — that comes from the well flowing more than the pump is delivering.' },
+          { text: 'Bit plugged — restriction causing false pressure reading',             correct: false, why: 'A plugged bit INCREASES pump pressure (more restriction), not decreases it. With a plugged bit, you cannot circulate through the bit. A pressure DROP means loss of restriction/resistance — the opposite of plugging.' },
+          { text: 'Formation fracture at shoe — mud going down and returns lost',         correct: false, why: 'Shoe fracture would show DECREASING pit volume (mud going into formation) and DECREASING surface returns. You are seeing INCREASING pit gain — fluids are coming IN, not going out. This is inflow, not loss.' },
+        ]
+      },
+      {
+        prompt: 'Drill string washout confirmed. Casing pressure is 790 psi, approaching MAASP of 820 psi. What is your decision?',
+        options: [
+          { text: 'Increase pump rate to compensate for washout and maintain BHP',       correct: false, why: 'Increasing pump rate with a washout only pumps more mud past the hole — it does not restore BHP effectively. More flow means more stress on the already-damaged drill string. And SICP is near MAASP — higher surface pressure risks shoe fracture.' },
+          { text: 'Shut in well on pipe rams, secure well, assess situation before proceeding', correct: true,  why: 'Correct! With a washout during a kill operation and pressure approaching MAASP, you must SECURE THE WELL first. Close pipe rams (they can seal around the washed out pipe). This stops flow, stabilizes casing pressure, and gives you time to evaluate options (strip out, sidetrack, bullhead, etc.)', calc: 'Shut In Procedure:\n1. STOP PUMP immediately\n2. Close PIPE RAMS (not annular — rams are more reliable under high pressure)\n3. Monitor SICP — should stabilize below MAASP (820 psi)\n4. Record: SIDPP=?, SICP=790 psi\n5. Contact Company Man + Well Control Expert\n6. Options: Bullhead kill, strip out new string, relief well (blowout)\nMAAPS Margin: 820 - 790 = 30 psi ONLY!' },
+          { text: 'Open the choke fully to reduce casing pressure below MAASP',          correct: false, why: 'Opening the choke REDUCES back-pressure on the well, which REDUCES BHP below pore pressure — allowing MORE influx. SICP would initially drop but influx would accelerate catastrophically. Never open choke to reduce SICP during a blowout scenario.' },
+          { text: 'Continue circulation — the kill mud may reach bottom soon and kill the well', correct: false, why: 'Kill mud cannot effectively reach the bottom with a washout — the mud is taking the shortcut through the hole in the pipe. You are not getting proper bottomhole pressure from the kill mud circulation. Continuing is a false hope that burns time and risks exceeding MAASP.' },
+        ]
+      },
+      {
+        prompt: 'Well is shut in. SICP stabilizes at 795 psi (MAASP = 820 psi, margin only 25 psi). What is next?',
+        options: [
+          { text: 'Perform a bullhead kill — pump kill mud down the annulus at high rate', correct: true,  why: 'Correct! With a washed-out drill string and insufficient MAASP margin to safely circulate through the string, bullheading is the emergency option. Pump kill mud down the ANNULUS (outside the drill pipe) at controlled rate to push the influx back into the formation.', calc: 'Bullhead Kill:\n  Pump down: Annulus side (kill line or choke line)\n  Kill MW: 11.2 + (480 ÷ (0.052 × 11500)) = 12.0 ppg\n  Max BHP during bullhead = MAASP + hydrostatic\n  Monitor: Surface treating pressure < fracture gradient\n  Rate: Slow — control surface pressure < 800 psi (near MAASP)\n  Risk: Shoe fracture → underground blowout\n  If unsuccessful → drill relief well' },
+          { text: 'Wait for the formation to balance itself — it will eventually equalize',  correct: false, why: 'HP/HT formations do not self-equalize without mechanical intervention. The pore pressure (12.1 ppg equiv.) is significantly above the current mud weight (11.2 ppg). Without kill action, the influx will continue to grow and SICP will eventually exceed MAASP — fracturing the shoe and creating an underground blowout.' },
+          { text: 'Strip new drill pipe through rams and drill out the washout section',  correct: false, why: 'Stripping new pipe while at 795 psi SICP near MAASP is extremely high-risk and technically complex. In a real emergency with only 25 psi of MAASP margin, this is not the immediate option. Bullheading to push the influx back is faster and more direct.' },
+          { text: 'Open all BOPs and allow well to flow to surface safely for analysis',  correct: false, why: 'Opening BOPs on a high-pressure well that is already near blowout conditions would result in an uncontrolled surface blowout. This is catastrophic — potential loss of life, rig, and environmental disaster. NEVER open BOPs to deliberately allow well flow.' },
+        ]
+      }
+    ]
+  },
+
+  {
+    id: 'wait-weight',
+    name: 'Wait & Weight Method — Kill Sheet Calculation',
+    difficulty: 'medium',
+    brief: {
+      depth: '9,000 ft TVD',
+      mw: '10.4 ppg',
+      formation: 'Oil sand — Pore Pressure 10.9 ppg',
+      rop: '55 ft/hr — kicked while drilling',
+    },
+    objective: `You've taken a kick while drilling. Well is shut in. SIDPP = 260 psi, SICP = 380 psi. Kick size = 8 bbl. You choose <strong>Wait & Weight method</strong>. You must correctly calculate the kill sheet parameters and execute the method in the right sequence.`,
+    kickSize: 8,
+    sidpp: 260, sicp: 380,
+    tvd: 9000, mwIn: 10.4, shoeDepth: 6500, lotEMW: 14.0,
+    pumpRate: 55,
+    steps: [
+      {
+        prompt: 'Before starting Wait & Weight, what must you calculate FIRST?',
+        options: [
+          { text: 'Kill mud weight only — just need to know how heavy to mix',          correct: false, why: 'Kill MW is essential, but Wait & Weight also requires a PRESSURE SCHEDULE — you need to know how the standpipe pressure should change throughout the circulation as kill mud travels from surface to bit to annulus. Without this, you cannot control the kill.' },
+          { text: 'Kill mud weight, initial circulating pressure, final circulating pressure, and pressure schedule', correct: true,  why: 'Correct! Wait & Weight requires a complete kill sheet. You need: (1) Kill MW, (2) Slow Circ Rate pressure with original mud, (3) Initial Circ Pressure = SCR + SIDPP, (4) Final Circ Pressure = SCR × (Kill MW / Original MW), and (5) A pressure schedule showing how DP pressure should drop as kill mud fills the string.', calc: 'Kill Sheet Calculations:\nKill MW = 10.4 + (260 ÷ (0.052 × 9000)) = 10.4 + 0.56 = 10.96 → 11.0 ppg\nSCR Pressure = 700 psi (slow circulating rate pressure, recorded earlier)\nICP = SCR + SIDPP = 700 + 260 = 960 psi\nFCP = SCR × (KMW / OMW) = 700 × (11.0 / 10.4) = 740 psi\nPressure drops from 960 → 740 psi as kill mud fills the string\nMAAP = (14.0 - 11.0) × 0.052 × 6500 = 1014 psi (shoe safe)' },
+          { text: 'Bleed off SICP first, then calculate — easier with zero reference',  correct: false, why: 'NEVER bleed off casing pressure before kill operations. SICP represents the pressure holding the formation fluid back. Bleeding it reduces BHP and allows MORE influx to enter. Record SICP and use it for calculations — do not bleed it.' },
+          { text: 'Check MAASP only — if shoe is safe, proceed without a kill sheet',   correct: false, why: 'MAASP tells you if the shoe can handle the pressures, but without ICP/FCP/pressure schedule, you cannot control the pressures during the kill. A kill without a kill sheet is blind and dangerous — you won\'t know what pressure to hold on the standpipe throughout the operation.' },
+        ]
+      },
+      {
+        prompt: 'Kill mud is mixed to 11.0 ppg. Pumps starting. What is the correct initial drill pipe pressure to hold?',
+        options: [
+          { text: '260 psi — hold SIDPP throughout',                                   correct: false, why: 'SIDPP is the shut-in value with no circulation. Once you start the pump, friction losses add to the pressure. You must INCREASE pressure by the SCR value to maintain the same BHP. Using 260 psi while pumping would underbalance the formation.' },
+          { text: '960 psi — Initial Circulating Pressure (ICP = SCR + SIDPP)',         correct: true,  why: 'Correct! When you start the pump, ICP = SCR + SIDPP = 700 + 260 = 960 psi. This accounts for both the formation pressure (SIDPP) and the friction pressure needed to circulate at SCR. Maintain exactly 960 psi on the drill pipe pressure gauge when you start pumps.', calc: 'Starting the Kill Pump:\nTarget: DP Pressure = ICP = 960 psi\nMethod: Start pump slowly, adjust choke to achieve 960 psi\nAs pump speed increases → choke restricts to hold 960 psi\nOnce at SCR speed → DP = 960 psi = CORRECT\nNow begin pressure schedule as kill mud descends' },
+          { text: '700 psi — just hold slow circulating rate pressure',                 correct: false, why: 'SCR = 700 psi is the friction loss ALONE with original mud weight and no kick. During the kill, you need SCR PLUS the SIDPP (which represents the underbalance). Holding only 700 psi would underbalance the well by 260 psi — the kick would grow.' },
+          { text: '380 psi — hold the casing pressure SICP to maintain balance',        correct: false, why: 'SICP (380 psi) is the CASING pressure, not the drill pipe pressure. In Wait & Weight, you control the DRILL PIPE pressure according to the kill sheet schedule. The casing pressure is a consequence, not a control variable (for this method).' },
+        ]
+      },
+      {
+        prompt: 'Kill mud is halfway down the string. The pressure schedule says DP pressure should be 850 psi. Actual DP pressure is 920 psi. What do you do?',
+        options: [
+          { text: 'Open choke slightly to reduce DP pressure to 850 psi',              correct: true,  why: 'Correct! If actual DP pressure is HIGHER than the schedule, you are OVER-PRESSURING the bottom of the well (excess BHP). Open the choke slightly — this reduces back-pressure in the annulus, which allows DP pressure to drop to the correct schedule value while maintaining the correct BHP.', calc: 'Pressure vs Schedule:\nSchedule says: 850 psi at this point\nActual: 920 psi (+70 psi over)\nThis means: BHP is too HIGH → risk of shoe fracture\nCorrection: Open choke → DP pressure drops\nChoke position is your throttle for BHP control\nOpen choke = reduce BHP\nClose choke = increase BHP\nTarget: Follow schedule within ±50 psi' },
+          { text: 'Close choke to increase pressure — you need maximum pressure for kill', correct: false, why: 'Actual is ALREADY above schedule (920 vs 850 psi). Closing the choke further INCREASES BHP. You are overbalancing — excess pressure risks fracturing the shoe and losing circulation. Open the choke.' },
+          { text: 'Increase pump rate to compensate for the pressure difference',        correct: false, why: 'The pump rate was set at SCR (slow circulating rate) for the kill. Increasing pump rate changes all your kill calculations (ICP, FCP, schedule) and invalidates the kill sheet. Maintain constant pump rate — adjust CHOKE only.' },
+          { text: 'Do nothing — 70 psi variance is within acceptable limits',            correct: false, why: '70 psi above schedule is NOT acceptable in a tight HP/HT well with limited MAASP margin. In Wait & Weight, you must follow the pressure schedule closely. This deviation represents excess BHP that could fracture the shoe. Correct it immediately by opening the choke.' },
+        ]
+      }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let state = {
+  scenario: null,
+  stepIdx: 0,
+  score: 0,
+  totalScore: 0,
+  errors: 0,
+  startTime: null,
+  timerInterval: null,
+  simInterval: null,
+  pumpOn: false,
+  pumpSPM: 60,
+  choke: 100,
+  annularOpen: true,
+  ramOpen: true,
+  blindOpen: true,
+  spp: 0,
+  casingPres: 0,
+  pitVol: 340,
+  flowOut: 0,
+  mwIn: 10.0,
+  mwOut: 10.0,
+  spm: 0,
+  hookLoad: 180,
+  accPres: 3000,
+  kickActive: false,
+  blowoutRisk: false,
+  scenarioScores: {},
+  feedbackPending: null,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+window.onload = function() {
+  renderMenu();
+  document.getElementById('total-score').textContent = '0 pts';
+};
+
+function renderMenu() {
+  const grid = document.getElementById('scenario-grid');
+  grid.innerHTML = SCENARIOS.map(sc => {
+    const done = state.scenarioScores[sc.id];
+    return `
+    <div class="scenario-card" onclick="openBrief('${sc.id}')">
+      ${done ? `<div class="score-badge">✓ ${done} pts</div>` : ''}
+      <span class="diff ${sc.difficulty}">${sc.difficulty.toUpperCase()}</span>
+      <h3>${sc.name}</h3>
+      <p>${sc.brief.depth} · ${sc.brief.formation}</p>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SCENARIO MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+function openBrief(id) {
+  const sc = SCENARIOS.find(s => s.id === id);
+  state.scenario = sc;
+  document.getElementById('brief-name').textContent = sc.name;
+  document.getElementById('brief-obj').innerHTML = sc.objective;
+
+  const dataHtml = Object.entries(sc.brief).map(([k,v]) => `
+    <div class="brief-item">
+      <div class="bi-label">${k.toUpperCase()}</div>
+      <div class="bi-val">${v}</div>
+    </div>`).join('');
+  document.getElementById('brief-data').innerHTML = dataHtml;
+
+  document.getElementById('brief-modal').classList.add('show');
+}
+
+function closeBrief() {
+  document.getElementById('brief-modal').classList.remove('show');
+  state.scenario = null;
+}
+
+function startScenario() {
+  document.getElementById('brief-modal').classList.remove('show');
+  const sc = state.scenario;
+
+  // init sim state
+  state.stepIdx = 0;
+  state.score = 0;
+  state.errors = 0;
+  state.pumpOn = false;
+  state.pumpSPM = sc.pumpRate;
+  state.choke = 100;
+  state.annularOpen = true;
+  state.ramOpen = true;
+  state.blindOpen = true;
+  state.spp = 0;
+  state.casingPres = sc.sicp > 0 ? Math.floor(sc.sicp * 0.6) : 0;
+  state.pitVol = 340;
+  state.flowOut = 0;
+  state.mwIn = sc.mwIn;
+  state.mwOut = sc.mwIn;
+  state.hookLoad = 180;
+  state.accPres = 3000;
+  state.kickActive = sc.kickSize > 0;
+  state.blowoutRisk = false;
+
+  // Switch screen
+  setScreen('sim-screen');
+
+  // Start timer
+  state.startTime = Date.now();
+  clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(updateTimer, 1000);
+
+  // Start sim loop
+  clearInterval(state.simInterval);
+  state.simInterval = setInterval(simTick, 1500);
+
+  // Init decision panel — show in idle state
+  const dp = document.getElementById('decision-panel');
+  dp.classList.add('show');
+  document.body.classList.add('panel-open');
+  setDPState('idle');
+  // Init gauges
+  updateAllGauges();
+  updateBOPDisplay();
+
+  // Clear log
+  document.getElementById('log-entries').innerHTML = '';
+  // Adjust sim-body height to leave room for decision panel (220px)
+  const simBody = document.getElementById('sim-body');
+  if (simBody) {
+    const hdrH = document.getElementById('header').offsetHeight || 58;
+    simBody.style.height = (window.innerHeight - hdrH - 220) + 'px';
+  }
+  // Ensure each step has a delay (seconds before question appears)
+  const _delayMap = {
+    'kick-detect':   [28,15,12],
+    'lost-circ':     [28,12],
+    'swab-kick':     [32,14,12],
+    'gas-migration': [32,14],
+    'shallow-gas':   [24,13,10],
+    'wait-weight':   [28,13,12],
+    'blowout-risk':  [24,12,12]
+  };
+  const _scDelays = _delayMap[sc.id] || [];
+  sc.steps.forEach((step, i) => {
+    if (!step.delay) step.delay = _scDelays[i] || 20;
+  });
+  log(`Scenario started: ${sc.name}`, 'info');
+  log(`Depth: ${sc.brief.depth} | MW: ${sc.mwIn} ppg | TVD: ${sc.tvd} ft`, 'info');
+
+  // Show initial parameters if kick scenario
+  if (sc.kickSize > 0) {
+    setTimeout(() => {
+      log('⚠ PIT VOLUME INCREASING — FLOW CHECK RECOMMENDED', 'warn');
+      log(`Pit Gain: ${Math.ceil(sc.kickSize * 0.4)} bbl detected`, 'warn');
+      setPitGain(Math.ceil(sc.kickSize * 0.4));
+    }, 2000);
+  }
+
+  // Schedule first decision with countdown (25 sec default)
+  const firstDelay = sc.steps[0].delay || 25;
+  log('Observe parameters for ' + firstDelay + 's before first decision', 'calc');
+  scheduleStep(firstDelay);
+}
+
+// ── Countdown → question ──
+let _cdInterval = null;
+function scheduleStep(delaySec) {
+  const panel = document.getElementById('decision-panel');
+  panel.classList.add('show');
+  document.body.classList.add('panel-open');
+  setDPState('countdown', delaySec);
+  let remaining = delaySec;
+  clearInterval(_cdInterval);
+  _cdInterval = setInterval(() => {
+    remaining--;
+    const pct = (remaining / delaySec) * 100;
+    document.getElementById('dp-cd-bar').style.width = pct + '%';
+    document.getElementById('dp-cd-secs').textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(_cdInterval);
+      showDPQuestion();
+    }
+  }, 1000);
+}
+
+function replayScenario() {
+  const sc = state.scenario;
+  setScreen('menu-screen');
+  setTimeout(() => openBrief(sc.id), 100);
+}
+
+function goMenu() {
+  clearInterval(state.timerInterval);
+  clearInterval(state.simInterval);
+  clearInterval(_cdInterval);
+  document.getElementById('blowout-overlay').style.display = 'none';
+  document.getElementById('decision-panel').classList.remove('show');
+  document.body.classList.remove('panel-open');
+  setScreen('menu-screen');
+  renderMenu();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DECISION ENGINE — bottom panel, never blocks simulation view
+// ═══════════════════════════════════════════════════════════════════
+
+function setDPState(state_name, countdownSec) {
+  const hdr   = document.getElementById('dp-header');
+  const cdRow = document.getElementById('dp-countdown-row');
+  const qText = document.getElementById('dp-question-text');
+  const idleL = document.getElementById('dp-idle-msg');
+  const opts  = document.getElementById('dp-options');
+  const fb    = document.getElementById('dp-feedback');
+  const idleR = document.getElementById('dp-idle-right');
+  // reset all
+  cdRow.classList.remove('show');
+  qText.style.display = 'none';
+  idleL.style.display = 'none';
+  opts.style.display  = 'none';
+  fb.style.display    = 'none';
+  idleR.style.display = 'none';
+
+  if (state_name === 'idle') {
+    hdr.textContent = 'MONITORING'; hdr.style.color = 'var(--muted)';
+    idleL.style.display = 'block';
+    idleR.style.display = 'block';
+  } else if (state_name === 'countdown') {
+    hdr.textContent = 'DECISION INCOMING'; hdr.style.color = 'var(--warn)';
+    document.getElementById('dp-cd-secs').textContent = countdownSec;
+    document.getElementById('dp-cd-bar').style.width = '100%';
+    cdRow.classList.add('show');
+    idleR.style.display = 'block';
+  } else if (state_name === 'question') {
+    hdr.textContent = 'DECISION REQUIRED'; hdr.style.color = 'var(--danger)';
+    qText.style.display = 'block';
+    opts.style.display  = 'block';
+  } else if (state_name === 'feedback') {
+    hdr.textContent = 'FEEDBACK'; hdr.style.color = state.feedbackPending === 'next' ? 'var(--success)' : 'var(--danger)';
+    qText.style.display = 'block';
+    fb.style.display    = 'block';
+  }
+}
+
+function showDPQuestion() {
+  const sc = state.scenario;
+  if (state.stepIdx >= sc.steps.length) { endScenario(true); return; }
+  const step = sc.steps[state.stepIdx];
+  setDPState('question');
+  document.getElementById('dp-question-text').textContent = step.prompt;
+  document.getElementById('dp-options').innerHTML = step.options.map((o, i) =>
+    `<button class="dp-opt" onclick="submitAnswer(${i})"><span class="dp-key">${['A','B','C','D'][i]}.</span> ${o.text}</button>`
+  ).join('');
+  log('Decision required — choose your action', 'warn');
+}
+
+function submitAnswer(idx) {
+  const sc = state.scenario;
+  const step = sc.steps[state.stepIdx];
+  const opt = step.options[idx];
+
+  // Disable all buttons, mark selected
+  document.querySelectorAll('.dp-opt').forEach((b, i) => {
+    b.disabled = true;
+    if (i === idx) b.classList.add(opt.correct ? 'correct' : 'wrong');
+  });
+
+  if (opt.correct) {
+    const pts = Math.max(10, 30 - state.errors * 5);
+    state.score += pts;
+    state.totalScore += pts;
+    document.getElementById('total-score').textContent = state.totalScore + ' pts';
+    state.feedbackPending = 'next';
+    state._lastPts = pts;
+    state.errors = 0;
+    log('Correct (+' + pts + ' pts)', 'success');
+    applyCorrectAction(step.prompt, opt.text);
+  } else {
+    state.errors++;
+    state.feedbackPending = 'retry';
+    state.casingPres = Math.min(state.casingPres + 80, sc.sicp + 200);
+    state.pitVol = Math.min(state.pitVol + 5, 395);
+    updateAllGauges();
+    log('Incorrect decision — review feedback below', 'danger');
+    if (state.errors >= 3) {
+      document.getElementById('blowout-overlay').style.display = 'block';
+      log('CRITICAL: Multiple wrong decisions!', 'danger');
+    }
+  }
+
+  // Show feedback in panel
+  setDPState('feedback');
+  const titleEl = document.getElementById('dp-fb-title');
+  titleEl.textContent = opt.correct ? ('CORRECT  (+' + (state._lastPts || 30) + ' pts)') : 'INCORRECT — Review explanation';
+  titleEl.style.color = opt.correct ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('dp-fb-why').textContent = opt.why;
+  const calcEl = document.getElementById('dp-fb-calc');
+  if (opt.calc) { calcEl.style.display = 'block'; calcEl.textContent = opt.calc; }
+  else { calcEl.style.display = 'none'; }
+}
+
+function dpContinue() {
+  document.getElementById('blowout-overlay').style.display = 'none';
+  if (state.feedbackPending === 'next') {
+    state.stepIdx++;
+    state.errors = 0;
+    if (state.stepIdx < state.scenario.steps.length) {
+      const nextDelay = state.scenario.steps[state.stepIdx].delay || 15;
+      log('Next decision in ' + nextDelay + 's — observe parameters', 'calc');
+      setDPState('countdown', nextDelay);
+      document.getElementById('dp-question-text').style.display = 'none';
+      scheduleStep(nextDelay);
+    } else {
+      endScenario(true);
+    }
+  } else {
+    // retry same question
+    showDPQuestion();
+  }
+}
+
+// legacy stub — no longer used but kept to avoid reference errors
+function askStep() { showDPQuestion(); }
+function closeFeedback() { dpContinue(); }
+
+// ═══════════════════════════════════════════════════════════════════
+// CONTROL PANEL ACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function action(id) {
+  const sc = state.scenario;
+  switch(id) {
+    case 'togglePump':
+      state.pumpOn = !state.pumpOn;
+      document.getElementById('dot-pump').classList.toggle('on', state.pumpOn);
+      log(state.pumpOn ? `→ Mud pump started @ ${state.pumpSPM} spm` : '→ Mud pump stopped', state.pumpOn ? 'success' : 'warn');
+      break;
+    case 'toggleAnnular':
+      state.annularOpen = !state.annularOpen;
+      document.getElementById('dot-ann').classList.toggle('on', !state.annularOpen);
+      log(state.annularOpen ? '→ Annular BOP OPENED' : '→ Annular BOP CLOSED — well shut in', !state.annularOpen ? 'warn' : 'info');
+      if (!state.annularOpen && sc) {
+        state.casingPres = sc.sicp > 0 ? sc.sicp : 0;
+        state.spp = sc.sidpp > 0 ? sc.sidpp : 0;
+        updateAllGauges();
+      }
+      break;
+    case 'toggleRam':
+      state.ramOpen = !state.ramOpen;
+      document.getElementById('dot-ram').classList.toggle('on', !state.ramOpen);
+      log(state.ramOpen ? '→ Pipe Ram OPENED' : '→ Pipe Ram CLOSED', 'warn');
+      break;
+    case 'toggleBlind':
+      state.blindOpen = !state.blindOpen;
+      document.getElementById('dot-blind').classList.toggle('on', !state.blindOpen);
+      log(state.blindOpen ? '→ Blind/Shear Ram OPENED' : '⚠ Blind/Shear Ram CLOSED — pipe will be sheared', 'danger');
+      break;
+    case 'fullCloseChoke':
+      setChoke(0); document.getElementById('sl-choke').value = 0;
+      log('→ Choke fully closed — maximum back-pressure applied', 'warn');
+      break;
+    case 'fullOpenChoke':
+      setChoke(100); document.getElementById('sl-choke').value = 100;
+      log('→ Choke fully opened', 'info');
+      break;
+    case 'drillerMethod':
+      log("🔵 Driller's Method selected — Circulation 1: pump at SCR, hold CASING pressure constant", 'success');
+      log('   Circ 1 Goal: Remove kick with original mud weight', 'calc');
+      log('   Circ 2 Goal: Circulate kill mud — hold DRILLPIPE pressure per schedule', 'calc');
+      break;
+    case 'waitWeight':
+      if (sc) {
+        const kmw = (sc.mwIn + sc.sidpp / (0.052 * sc.tvd)).toFixed(2);
+        log('🟢 Wait & Weight selected — weighting mud before circulation', 'success');
+        log(`   Kill MW = ${kmw} ppg → round up to ${Math.ceil(parseFloat(kmw)*10)/10} ppg`, 'calc');
+      }
+      break;
+    case 'shutInDP':
+      log('🔒 Shut-in recorded — SIDPP = ' + (sc ? sc.sidpp : 0) + ' psi', 'success');
+      break;
+    case 'shutInCsg':
+      log('🔒 Shut-in recorded — SICP = ' + (sc ? sc.sicp : 0) + ' psi', 'success');
+      break;
+    case 'checkMAAP':
+      if (sc) {
+        const maasp = ((sc.lotEMW - sc.mwIn) * 0.052 * sc.shoeDepth).toFixed(0);
+        log(`📊 MAASP = (LOT EMW – MW) × 0.052 × Shoe Depth`, 'calc');
+        log(`   = (${sc.lotEMW} - ${sc.mwIn}) × 0.052 × ${sc.shoeDepth} = ${maasp} psi`, 'calc');
+      }
+      break;
+    case 'circulate':
+      log('↺ Circulating bottoms up — monitoring for gas returns', 'info');
+      state.pumpOn = true;
+      document.getElementById('dot-pump').classList.add('on');
+      break;
+    case 'weightUp':
+      log('⬆ Mud weight-up initiated — barite addition in progress', 'warn');
+      log('   WARNING: Ensure kill weight is correct before starting kill circ', 'warn');
+      break;
+    case 'POOH':
+      log('▲ Pulling out of hole — monitor for swabbing (pit gain)', 'warn');
+      break;
+    case 'RIH':
+      log('▼ Running in hole — monitor for surging (pit loss, flow increase)', 'warn');
+      break;
+    case 'stageCement':
+      log('⬡ Stage cement operation — requires approved program', 'info');
+      break;
+  }
+  updateBOPDisplay();
+  updateAllGauges();
+}
+
+function setSPM(val) {
+  state.pumpSPM = parseInt(val);
+  document.getElementById('lbl-spm').textContent = val + ' spm';
+  if (state.pumpOn) updateAllGauges();
+}
+
+function setChoke(val) {
+  state.choke = parseInt(val);
+  document.getElementById('lbl-choke').textContent = val + '%';
+  document.getElementById('g-choke').textContent = val;
+  document.getElementById('gf-choke').style.width = val + '%';
+  colorFill('gf-choke', val, 30, 10);
+}
+
+function showCalc() {
+  const sc = state.scenario;
+  if (!sc) return;
+  const kmw = (sc.mwIn + sc.sidpp / (0.052 * sc.tvd)).toFixed(2);
+  const maasp = ((sc.lotEMW - sc.mwIn) * 0.052 * sc.shoeDepth).toFixed(0);
+  const icp = (700 + sc.sidpp).toFixed(0);
+  const fcp = (700 * parseFloat(kmw) / sc.mwIn).toFixed(0);
+
+  document.getElementById('dp-fb-title').textContent = 'KILL SHEET';
+  document.getElementById('dp-fb-title').style.color = '#c678dd';
+  document.getElementById('dp-fb-why').innerHTML = '<strong>Scenario: ' + sc.name + '</strong>';
+  const panel2 = document.getElementById('decision-panel');
+  panel2.classList.add('show'); document.body.classList.add('panel-open');
+  setDPState('feedback');
+  document.getElementById('dp-fb-calc').style.display = 'block';
+  document.getElementById('dp-fb-calc').textContent = [
+    `Original MW    : ${sc.mwIn} ppg`,
+    `TVD            : ${sc.tvd} ft`,
+    `SIDPP          : ${sc.sidpp} psi`,
+    `SICP           : ${sc.sicp} psi`,
+    `Shoe Depth     : ${sc.shoeDepth} ft`,
+    `LOT EMW        : ${sc.lotEMW} ppg`,
+    `─────────────────────────────`,
+    `Kill MW = ${sc.mwIn} + (${sc.sidpp} ÷ (0.052 × ${sc.tvd}))`,
+    `        = ${sc.mwIn} + ${(sc.sidpp/(0.052*sc.tvd)).toFixed(2)} = ${kmw} ppg`,
+    `MAASP   = (${sc.lotEMW} - ${sc.mwIn}) × 0.052 × ${sc.shoeDepth} = ${maasp} psi`,
+    `ICP     = SCR + SIDPP = 700 + ${sc.sidpp} = ${icp} psi`,
+    `FCP     = SCR × (KMW/OMW) = 700 × (${kmw}/${sc.mwIn}) = ${fcp} psi`,
+  ].join('\n');
+  state.feedbackPending = null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SIM TICK (background simulation)
+// ═══════════════════════════════════════════════════════════════════
+function simTick() {
+  const sc = state.scenario;
+  if (!sc) return;
+
+  // Pump running
+  if (state.pumpOn) {
+    state.spm = state.pumpSPM;
+    state.spp = Math.round(600 + state.pumpSPM * 3.5 + (state.choke < 50 ? (50 - state.choke) * 8 : 0) + (Math.random() - 0.5) * 20);
+    state.flowOut = Math.round(state.pumpSPM * 0.085 * 10) / 10;
+    // Slowly reduce casing pressure if BOP closed and pumping
+    if (!state.annularOpen && state.casingPres > 0) {
+      state.casingPres = Math.max(0, state.casingPres - 5);
+    }
+  } else {
+    state.spm = 0;
+    state.spp = 0;
+    state.flowOut = state.kickActive && !state.annularOpen ? 0 : (state.kickActive ? Math.round(Math.random() * 15 + 5) : 0);
+  }
+
+  // Kick simulation
+  if (state.kickActive && state.annularOpen) {
+    state.pitVol = Math.min(state.pitVol + 0.5, 400);
+    if (state.pitVol > 380) {
+      setBadge('warning', 'KICK IN PROGRESS');
+    }
+  }
+
+  // Gas migration (sicp rising when BOP closed and not circulating)
+  if (!state.annularOpen && !state.pumpOn && sc.kickSize > 0) {
+    state.casingPres = Math.min(state.casingPres + 3, sc.sicp + 300);
+  }
+
+  state.mwOut = (state.pumpOn && !state.annularOpen) ? 
+    Math.max(state.mwIn - 0.3, state.mwIn - sc.kickSize * 0.005) : state.mwIn;
+
+  updateAllGauges();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GAUGES & DISPLAY
+// ═══════════════════════════════════════════════════════════════════
+function updateAllGauges() {
+  const sc = state.scenario;
+  setGauge('spp',    state.spp,      5000,  state.spp > 3500 ? 'danger' : state.spp > 2500 ? 'warn' : '');
+  setGauge('casing', state.casingPres, 2000, state.casingPres > 800 ? 'danger' : state.casingPres > 500 ? 'warn' : '');
+  setGauge('pit',    state.pitVol,   400,   state.pitVol > 380 ? 'danger' : state.pitVol > 360 ? 'warn' : '');
+  setGauge('flow',   state.flowOut,  200,   '');
+  setGauge('mw',     state.mwIn,    20,    '');
+  setGauge('mw-out', state.mwOut,   20,    state.mwOut < state.mwIn - 0.2 ? 'warn' : '');
+  setGauge('spm',    state.spm,     120,   '');
+  setGauge('hook',   state.hookLoad, 400,  '');
+
+  // Pit level visual
+  const pitPct = (state.pitVol - 280) / 120;
+  const pitBar = document.getElementById('pit-level-bar');
+  if (pitBar) {
+    const h = Math.max(0, Math.min(32, Math.round(pitPct * 32)));
+    pitBar.setAttribute('height', h);
+    pitBar.style.fill = state.pitVol > 380 ? 'rgba(255,59,59,0.4)' : 'rgba(0,212,255,0.3)';
+  }
+
+  // Blowout risk
+  if (sc && state.casingPres > (sc.lotEMW - sc.mwIn) * 0.052 * sc.shoeDepth * 0.9) {
+    document.getElementById('blowout-overlay').style.display = 'block';
+    setBadge('danger', 'CRITICAL — BLOWOUT RISK');
+  }
+}
+
+function setGauge(id, val, max, cls) {
+  const el = document.getElementById('g-' + id);
+  const fill = document.getElementById('gf-' + id);
+  if (!el || !fill) return;
+  el.textContent = typeof val === 'number' ? (val % 1 !== 0 ? val.toFixed(1) : val) : val;
+  const pct = Math.min(100, Math.max(0, (val / max) * 100));
+  fill.style.width = pct + '%';
+  fill.className = 'gauge-fill' + (cls ? ' ' + cls : '');
+}
+
+function colorFill(id, val, warnAt, dangerAt) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'gauge-fill' + (val <= dangerAt ? ' danger' : val <= warnAt ? ' warn' : '');
+}
+
+function updateBOPDisplay() {
+  const setInd = (id, open) => {
+    const el = document.getElementById('bop-' + id);
+    el.className = 'bop-indicator ' + (open ? 'bop-open' : 'bop-closed');
+    el.textContent = id.toUpperCase().substring(0,3);
+  };
+  setInd('ann', state.annularOpen);
+  setInd('ram', state.ramOpen);
+  setInd('blind', state.blindOpen);
+
+  // BOP rect color
+  const bopRect = document.getElementById('bop-rect');
+  if (bopRect) {
+    bopRect.style.stroke = (!state.annularOpen || !state.ramOpen) ? '#ff3b3b' : '#1e3a50';
+  }
+}
+
+function setBadge(type, msg) {
+  const el = document.getElementById('rig-status-badge');
+  el.className = 'rig-status ' + type;
+  el.textContent = msg;
+}
+
+function setPitGain(bbl) {
+  state.pitVol = Math.min(400, 340 + bbl);
+  state.flowOut = Math.round(Math.random() * 20 + 15);
+}
+
+function applyCorrectAction(prompt, action) {
+  if (action.includes('shut in') || action.includes('Shut') || action.includes('SHUT')) {
+    setBadge('warning', 'SHUT IN — RECORDING SIDPP/SICP');
+  } else if (action.includes('Kill') || action.includes('kill') || action.includes('Wait')) {
+    setBadge('normal', 'KILL OPERATION IN PROGRESS');
+  } else if (action.includes('evacuate') || action.includes('safety')) {
+    setBadge('danger', 'EMERGENCY — PERSONNEL EVACUATION');
+  } else if (action.includes('divert') || action.includes('Divert')) {
+    setBadge('warning', 'DIVERTER ACTIVE');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════════════════════════════
+function log(msg, type='info') {
+  const el = document.getElementById('log-entries');
+  const elapsed = state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : 0;
+  const mm = String(Math.floor(elapsed/60)).padStart(2,'0');
+  const ss = String(elapsed%60).padStart(2,'0');
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `<span class="log-time">${mm}:${ss}</span><span class="log-msg ${type}">${msg}</span>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════════════════════════
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const mm = String(Math.floor(elapsed/60)).padStart(2,'0');
+  const ss = String(elapsed%60).padStart(2,'0');
+  document.getElementById('timer-box').textContent = `⏱ ${mm}:${ss}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// END SCENARIO
+// ═══════════════════════════════════════════════════════════════════
+function endScenario(success) {
+  clearInterval(state.timerInterval);
+  clearInterval(state.simInterval);
+  clearInterval(_cdInterval);
+  document.getElementById('decision-panel').classList.remove('show');
+  document.body.classList.remove('panel-open');
+  document.getElementById('blowout-overlay').style.display = 'none';
+
+  const sc = state.scenario;
+  const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+  const maxPts = sc.steps.length * 30;
+  const pct = Math.round((state.score / maxPts) * 100);
+
+  let grade, gradeClass, title;
+  if (!success || pct < 40) { grade = 'F'; gradeClass = 'fail'; title = 'SCENARIO FAILED'; }
+  else if (pct < 60)        { grade = 'D'; gradeClass = 'fail'; title = 'BELOW STANDARD'; }
+  else if (pct < 75)        { grade = 'C'; gradeClass = 'pass'; title = 'PASS — MARGINAL'; }
+  else if (pct < 90)        { grade = 'B'; gradeClass = 'pass'; title = 'GOOD PERFORMANCE'; }
+  else                      { grade = 'A'; gradeClass = 'pass'; title = 'EXCELLENT — IWCF READY'; }
+
+  state.scenarioScores[sc.id] = state.score;
+
+  const mm = String(Math.floor(elapsed/60)).padStart(2,'0');
+  const ss = String(elapsed%60).padStart(2,'0');
+
+  document.getElementById('result-grade').textContent = grade;
+  document.getElementById('result-grade').className = 'grade ' + gradeClass;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-summary').innerHTML = `
+    Scenario: <strong>${sc.name}</strong><br>
+    Score: <strong>${state.score} / ${maxPts} pts (${pct}%)</strong><br>
+    Time: <strong>${mm}:${ss}</strong><br>
+    Wrong decisions: <strong>${state.errors}</strong><br><br>
+    ${pct >= 75 ? '✓ You demonstrated correct well control procedure.' : '✗ Review the scenario feedback and re-attempt to improve your IWCF readiness.'}
+  `;
+
+  setScreen('result-screen');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════
+function setScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>

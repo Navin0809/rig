@@ -735,7 +735,7 @@
 
   <div id="ticker">
     <div id="ticker-inner">
-      IWCF LEVEL 3 — 16 SCENARIOS &nbsp;|&nbsp; KILL MW = OMW + (SIDPP ÷ (0.052 × TVD)) &nbsp;|&nbsp; ICP = SCR + SIDPP &nbsp;|&nbsp; FCP = SCR × (KMW ÷ OMW) &nbsp;|&nbsp; MAASP = (LOT EMW − KMW) × 0.052 × SHOE DEPTH &nbsp;|&nbsp; SHUT IN SEQUENCE: STOP PUMP → PICK UP → CLOSE ANNULAR → CHOKE MANIFOLD → RECORD SIDPP/SICP &nbsp;|&nbsp; DRILLER'S = 2 CIRCULATIONS: HOLD SICP (CIRC1) THEN DP SCHEDULE (CIRC2) &nbsp;|&nbsp; WAIT &amp; WEIGHT = SINGLE CIRC, FOLLOW DP PRESSURE SCHEDULE FROM ICP → FCP &nbsp;|&nbsp; SHALLOW GAS = DIVERT, DO NOT SHUT IN &nbsp;|&nbsp; FLOAT VALVE = SLOWLY PUMP TO FIND TRUE SIDPP &nbsp;|&nbsp; SICP &gt; SIDPP = GAS INFLUX (LARGE DIFF = MORE GAS) &nbsp;|&nbsp; GAS MIGRATION = RISING SICP WITH STABLE SIDPP → VOLUMETRIC METHOD &nbsp;|&nbsp; 2 BARRIERS ALWAYS REQUIRED: PRIMARY = MUD WEIGHT, SECONDARY = BOP STACK &nbsp;|&nbsp; IWCF LEVEL 3 — 16 SCENARIOS &nbsp;|&nbsp; KILL MW = OMW + (SIDPP ÷ (0.052 × TVD))
+      IWCF LEVEL 3 — 50 SCENARIOS &nbsp;|&nbsp; KILL MW = OMW + (SIDPP ÷ (0.052 × TVD)) &nbsp;|&nbsp; ICP = SCR + SIDPP &nbsp;|&nbsp; FCP = SCR × (KMW ÷ OMW) &nbsp;|&nbsp; MAASP = (LOT EMW − KMW) × 0.052 × SHOE DEPTH &nbsp;|&nbsp; SHUT IN SEQUENCE: STOP PUMP → PICK UP → CLOSE ANNULAR → CHOKE MANIFOLD → RECORD SIDPP/SICP &nbsp;|&nbsp; DRILLER'S = 2 CIRCULATIONS: HOLD SICP (CIRC1) THEN DP SCHEDULE (CIRC2) &nbsp;|&nbsp; WAIT &amp; WEIGHT = SINGLE CIRC, FOLLOW DP PRESSURE SCHEDULE FROM ICP → FCP &nbsp;|&nbsp; SHALLOW GAS = DIVERT, DO NOT SHUT IN &nbsp;|&nbsp; FLOAT VALVE = SLOWLY PUMP TO FIND TRUE SIDPP &nbsp;|&nbsp; SICP &gt; SIDPP = GAS INFLUX (LARGE DIFF = MORE GAS) &nbsp;|&nbsp; GAS MIGRATION = RISING SICP WITH STABLE SIDPP → VOLUMETRIC METHOD &nbsp;|&nbsp; 2 BARRIERS ALWAYS REQUIRED: PRIMARY = MUD WEIGHT, SECONDARY = BOP STACK &nbsp;|&nbsp; IWCF LEVEL 3 — 50 SCENARIOS &nbsp;|&nbsp; KILL MW = OMW + (SIDPP ÷ (0.052 × TVD))
     </div>
   </div>
 </div>
@@ -756,757 +756,771 @@
 // SCENARIO DEFINITIONS
 // ═══════════════════════════════════════════════════════════════════
 const SCENARIOS = [
-  // ══════════════════════════════════════════════════
-  // 1. KICK DETECTION — GAS INFLUX (EASY)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'kick-detection',
-    name: 'Kick Detection — Gas Influx While Drilling',
-    difficulty: 'easy',
-    brief: {
-      depth: '8,500 ft TVD',
-      mw: '10.0 ppg',
-      formation: 'Sandstone — Pore Pressure 10.8 ppg equiv.',
-      status: 'Drilling ahead at 45 ft/hr',
-    },
-    objective: `You are drilling ahead at 8,500 ft. You notice the <strong>pit volume increasing by 2 bbl</strong> over the last 5 minutes. Flow return appears slightly higher than pump input. Recognize the kick warning signs and take correct immediate action.`,
-    kickSize: 10, sidpp: 350, sicp: 420,
-    tvd: 8500, mwIn: 10.0, shoeDepth: 6000, lotEMW: 14.5, pumpRate: 60,
-    steps: [
-      {
-        prompt: 'You notice a 2 bbl pit gain and increased flow return with pumps running. What is your FIRST action?',
-        options: [
-          { text: 'Stop rotary, pick up to BOP space-out position, stop pumps, flow check, shut in if flow confirmed', correct: true, why: 'Correct! STOP — OBSERVE — SHUT IN. Stop drilling, pick up above rotary, perform a flow check. If flow is confirmed, shut in using the annular BOP and record SIDPP/SICP. Early shut-in minimises kick volume.', calc: 'Pit Gain = 2 bbl → Kick Volume detected\nFlow Check: YES FLOW = KICK CONFIRMED\nAction: HARD SHUT IN immediately\nRecord: SIDPP = 350 psi, SICP = 420 psi' },
-          { text: 'Stop rotary, pick up off bottom only — no shut in yet', correct: false, why: 'Picking up without shutting in risks swabbing more influx in. Once a kick indicator is confirmed with a positive flow check, you MUST shut in. Never hesitate after flow check confirms flow.' },
-          { text: 'Increase pump rate to push influx back with ECD', correct: false, why: 'WRONG — Increasing pump rate increases ECD momentarily but does NOT kill the kick and can fracture the shoe. Never try to pump a kick back without proper well control procedures in place.' },
-          { text: 'Add more mud weight immediately and continue drilling', correct: false, why: 'Weighting up takes time. With an active kick, SHUT IN first, then calculate kill weight. You cannot mix kill mud fast enough to stop an active influx.' },
-        ]
-      },
-      {
-        prompt: 'Well is shut in. SIDPP reads 350 psi, SICP reads 420 psi. Calculate kill mud weight. (TVD = 8,500 ft)',
-        options: [
-          { text: '10.79 ppg → round up to 10.8 ppg', correct: true, why: 'Correct! Kill MW = OMW + (SIDPP ÷ (0.052 × TVD)) = 10.0 + (350 ÷ 442) = 10.79 → 10.8 ppg. Always round UP to the nearest 0.1 ppg.', calc: 'Kill MW = 10.0 + (350 ÷ (0.052 × 8500))\n        = 10.0 + (350 ÷ 442)\n        = 10.0 + 0.79 = 10.79 ppg → 10.8 ppg' },
-          { text: '11.5 ppg — add 0.5 ppg safety margin on top', correct: false, why: 'Adding arbitrary extra weight risks fracturing the formation at the shoe. The formula gives exactly what is needed. Over-weighting = lost circulation = worsened situation.' },
-          { text: '10.0 ppg — no change needed, just circulate kick out', correct: false, why: 'Circulating with original 10.0 ppg will NOT kill the well. Pore pressure > hydrostatic at 10.0 ppg — that is why the kick occurred.' },
-          { text: '10.4 ppg using SICP instead of SIDPP', correct: false, why: 'ALWAYS use SIDPP for kill MW calculation, not SICP. SIDPP reflects the underbalance at the bottom of the drill string. SICP includes influx hydrostatic, making it an unreliable measure for kill MW.' },
-        ]
-      },
-      {
-        prompt: "Kill MW is 10.8 ppg. You choose Driller's Method. What is the correct SEQUENCE?",
-        options: [
-          { text: "Circ 1: Circulate kick out with original 10.0 ppg mud holding constant SICP. Circ 2: Circulate kill mud (10.8 ppg) down while following DP pressure schedule.", correct: true, why: "Correct! Driller's Method = TWO circulations. First: circulate influx out at SCR, holding casing pressure constant. Second: bring kill mud in, holding DP pressure constant per schedule. BHP stays constant throughout both circulations.", calc: "Driller's Method:\nCirc 1: Hold CASING pressure constant at shut-in SICP\n  → Pump at SCR (slow circ rate)\n  → Circulate influx out through chokes to MGS\nCirc 2: Hold DP pressure per KILL SHEET SCHEDULE\n  → Schedule drops from ICP → FCP as kill mud descends\n  ICP = SCR + SIDPP = 700 + 350 = 1050 psi\n  FCP = SCR × (KMW/OMW) = 700 × (10.8/10.0) = 756 psi" },
-          { text: 'Weight mud to 10.8 ppg first, then circulate once — single circulation', correct: false, why: "That's Wait & Weight method, not Driller's. Both are valid. Choose ONE and stick to it. Switching methods mid-operation is dangerous." },
-          { text: 'Open choke slowly and bleed off casing pressure, then resume drilling', correct: false, why: 'NEVER bleed off casing pressure without a kill operation in progress. Bleeding SICP reduces BHP — more influx enters the wellbore. Critical error.' },
-          { text: 'Bullhead kill mud down the annulus at high pressure', correct: false, why: "Bullheading is a specialised last-resort operation, not standard Driller's Method. Used when pipe cannot be moved. Risk: fracturing the shoe." },
-        ]
-      }
-    ]
-  },
+  ...(() => {
+    const TOPICS = [
+      { id: 's01', name: 'Kick Detection While Drilling', difficulty: 'easy' },
+      { id: 's02', name: 'Kill Sheet Calculations - Complete', difficulty: 'medium' },
+      { id: 's03', name: "Driller's Method - Full Execution", difficulty: 'medium' },
+      { id: 's04', name: 'Wait & Weight Method - Full Execution', difficulty: 'medium' },
+      { id: 's05', name: 'Volumetric Method & Lubricate-and-Bleed', difficulty: 'hard' },
+      { id: 's06', name: 'BOP Equipment - Types, Function & Testing', difficulty: 'medium' },
+      { id: 's07', name: 'Choke Manifold & Circulating Kill System', difficulty: 'medium' },
+      { id: 's08', name: 'Well Barriers - Primary & Secondary', difficulty: 'medium' },
+      { id: 's09', name: 'Influx Characteristics & Gradient Identification', difficulty: 'medium' },
+      { id: 's10', name: 'Gas Migration & Pressure Management', difficulty: 'hard' },
+      { id: 's11', name: 'Shallow Gas - Diverter Operations', difficulty: 'hard' },
+      { id: 's12', name: 'Lost Circulation - Recognition & Response', difficulty: 'medium' },
+      { id: 's13', name: 'Lost Circulation During Active Well Control', difficulty: 'hard' },
+      { id: 's14', name: 'Swab Kick During Tripping Operations', difficulty: 'medium' },
+      { id: 's15', name: 'Well Control During Casing Running', difficulty: 'medium' },
+      { id: 's16', name: 'Well Control During Cementing Operations', difficulty: 'hard' },
+      { id: 's17', name: 'Stripping & Snubbing Operations', difficulty: 'hard' },
+      { id: 's18', name: 'Contingency - BOP Failure During Kill', difficulty: 'hard' },
+      { id: 's19', name: 'Contingency - Gauge Failure & Blind Kill', difficulty: 'hard' },
+      { id: 's20', name: 'Hydrate Formation & Prevention', difficulty: 'medium' },
+      { id: 's21', name: 'Well Control Drills & Management Responsibilities', difficulty: 'easy' },
+      { id: 's22', name: 'Risk Management & Management of Change', difficulty: 'medium' },
+      { id: 's23', name: 'BOP Stack Configuration & Selection', difficulty: 'medium' },
+      { id: 's24', name: 'Ram Type Preventers - Advanced Operations', difficulty: 'medium' },
+      { id: 's25', name: 'Blind/Shear Ram - Selection & Use', difficulty: 'hard' },
+      { id: 's26', name: 'Annular Preventer - Operations & Limitations', difficulty: 'medium' },
+      { id: 's27', name: 'Diverter Systems - Design & Operations', difficulty: 'medium' },
+      { id: 's28', name: 'Inside BOPs & Non-Return Valves', difficulty: 'medium' },
+      { id: 's29', name: 'BOP Accumulator & Control Systems', difficulty: 'medium' },
+      { id: 's30', name: 'Subsea BOP - Control & Operations', difficulty: 'hard' },
+      { id: 's31', name: 'BOP Testing - Full Frequency & Procedure', difficulty: 'medium' },
+      { id: 's32', name: 'Inflow & Formation Integrity Testing', difficulty: 'medium' },
+      { id: 's33', name: 'Mud/Gas Separator - Design & Limitations', difficulty: 'medium' },
+      { id: 's34', name: 'Vacuum Degasser - Operations', difficulty: 'easy' },
+      { id: 's35', name: 'Choke Line Friction - Subsea Wells', difficulty: 'hard' },
+      { id: 's36', name: 'Subsea Well Control - Riser Operations', difficulty: 'hard' },
+      { id: 's37', name: 'Subsea Hang-Off & Disconnect Procedures', difficulty: 'hard' },
+      { id: 's38', name: 'HP/HT Well Control - Special Considerations', difficulty: 'hard' },
+      { id: 's39', name: 'Horizontal & ERD Well Control', difficulty: 'hard' },
+      { id: 's40', name: 'Wireline & Coiled Tubing Well Control', difficulty: 'medium' },
+      { id: 's41', name: 'Simultaneous Kick & Lost Circulation', difficulty: 'hard' },
+      { id: 's42', name: 'Underground Blowout - Recognition & Response', difficulty: 'hard' },
+      { id: 's43', name: 'Well Control Calculations - Mixed Advanced', difficulty: 'hard' },
+      { id: 's44', name: 'Formation Pressure Evaluation - MWD/LWD', difficulty: 'medium' },
+      { id: 's45', name: 'Casing Design & Shoe Integrity', difficulty: 'medium' },
+      { id: 's46', name: 'H2S Well Control - Detection & Response', difficulty: 'hard' },
+      { id: 's47', name: 'Kick Causes, Prevention & Monitoring', difficulty: 'easy' },
+      { id: 's48', name: 'Regulatory Requirements & IWCF Standards', difficulty: 'easy' },
+      { id: 's49', name: 'IWCF Exam Practice - Principles & Procedures', difficulty: 'medium' },
+      { id: 's50', name: 'IWCF Exam Practice - Equipment & Calculations', difficulty: 'hard' }
+    ];
 
-  // ══════════════════════════════════════════════════
-  // 2. KILL SHEET CALCULATIONS (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'kill-sheet-calc',
-    name: 'Kill Sheet Calculations — Pre and Post Kick',
-    difficulty: 'medium',
-    brief: {
-      depth: '10,000 ft TVD / 11,200 ft MD',
-      mw: '11.0 ppg',
-      formation: 'Gas sand — SIDPP = 420 psi after shut-in',
-      status: 'Well shut in — kill sheet required',
-    },
-    objective: `The well kicked while drilling. <strong>SIDPP = 420 psi, SICP = 540 psi</strong>. Shoe depth = 7,000 ft. LOT EMW = 14.8 ppg. SCR pressure = 750 psi at 30 spm. String volume = 120 bbl. Annulus volume = 300 bbl. Work through the complete kill sheet.`,
-    kickSize: 15, sidpp: 420, sicp: 540,
-    tvd: 10000, mwIn: 11.0, shoeDepth: 7000, lotEMW: 14.8, pumpRate: 30,
-    steps: [
-      {
-        prompt: 'Calculate the KILL MUD WEIGHT. TVD = 10,000 ft, OMW = 11.0 ppg, SIDPP = 420 psi.',
-        options: [
-          { text: '11.81 ppg → round up to 11.9 ppg', correct: true, why: 'KMW = 11.0 + (420 ÷ (0.052 × 10000)) = 11.0 + (420 ÷ 520) = 11.0 + 0.81 = 11.81 → 11.9 ppg (round up).', calc: 'Kill MW = OMW + (SIDPP ÷ (0.052 × TVD))\n= 11.0 + (420 ÷ 520)\n= 11.0 + 0.808\n= 11.808 → round UP → 11.9 ppg' },
-          { text: '11.0 ppg — no change, SIDPP within tolerance', correct: false, why: '420 psi is a significant underbalance and cannot be ignored. Kill weight MUST increase.' },
-          { text: '12.5 ppg — use SICP divided by 0.052 × TVD', correct: false, why: 'Never use SICP to calculate kill MW. SICP (540 psi) includes influx hydrostatic column, inflating the result. Use SIDPP only.' },
-          { text: '11.5 ppg — rough estimate is close enough', correct: false, why: 'Kill sheet calculations must be precise. Using an underestimate risks the kill mud being too light to control the formation. Use the formula exactly.' },
-        ]
-      },
-      {
-        prompt: 'Calculate MAASP. LOT EMW = 14.8 ppg, KMW = 11.9 ppg, Shoe Depth = 7,000 ft.',
-        options: [
-          { text: 'MAASP = (14.8 - 11.9) × 0.052 × 7000 = 1054.8 psi → 1055 psi', correct: true, why: 'MAASP = (LOT EMW − Kill MW) × 0.052 × Shoe Depth. This is the maximum pressure you can apply at surface before fracturing at the shoe.', calc: 'MAASP = (LOT EMW − KMW) × 0.052 × Shoe Depth\n= (14.8 − 11.9) × 0.052 × 7000\n= 2.9 × 0.052 × 7000\n= 2.9 × 364\n= 1055.6 psi → 1055 psi\nNOTE: Use KILL MW (not original MW) in MAASP calc' },
-          { text: 'MAASP = (14.8 - 11.0) × 0.052 × 7000 = 1385.6 psi', correct: false, why: 'Using the ORIGINAL MW (11.0) overestimates MAASP. During kill with 11.9 ppg mud, the hydrostatic at the shoe is based on KMW. Use KMW for a conservative (safe) MAASP.' },
-          { text: 'MAASP = LOT pressure ÷ (0.052 × TVD) = 14.8 ppg', correct: false, why: 'That formula calculates EMW, not MAASP. MAASP is a SURFACE PRESSURE limit, not a mud weight.' },
-          { text: 'MAASP = 14.8 × 0.052 × 7000 = 5387 psi', correct: false, why: 'This calculates the TOTAL fracture pressure at the shoe, not the allowable SURFACE pressure. You must subtract the hydrostatic head of the kill mud column.' },
-        ]
-      },
-      {
-        prompt: 'Calculate ICP and FCP. SCR = 750 psi, SIDPP = 420 psi, KMW = 11.9 ppg, OMW = 11.0 ppg.',
-        options: [
-          { text: 'ICP = 1170 psi, FCP = 811 psi', correct: true, why: 'ICP = SCR + SIDPP = 750 + 420 = 1170 psi. FCP = SCR × (KMW/OMW) = 750 × (11.9/11.0) = 750 × 1.0818 = 811.4 → 811 psi. DP pressure follows schedule from 1170 down to 811 psi as kill mud fills the string.', calc: 'ICP = SCR + SIDPP = 750 + 420 = 1170 psi\nFCP = SCR × (KMW ÷ OMW)\n= 750 × (11.9 ÷ 11.0)\n= 750 × 1.0818\n= 811 psi\n\nPressure Schedule: DP pressure drops linearly\nfrom 1170 psi → 811 psi as kill mud descends\nDrop per step depends on string capacity vs step volume' },
-          { text: 'ICP = 750 psi, FCP = 420 psi', correct: false, why: 'ICP is NOT just the SCR pressure. ICP = SCR + SIDPP. The SIDPP must be added to account for the underbalance. Using just SCR would underbalance the well at startup.' },
-          { text: 'ICP = 420 psi, FCP = 750 psi', correct: false, why: 'ICP > FCP always in Wait & Weight. ICP is your starting pressure (kill mud at surface, original mud in hole), FCP is ending pressure (all kill mud in string). Reversed values would indicate decreasing mud weight, which makes no sense.' },
-          { text: 'ICP = 1170 psi, FCP = 1170 psi — no change needed', correct: false, why: 'If ICP = FCP, kill mud density = original mud density — impossible since kill mud is heavier. FCP must be LESS than ICP because kill mud provides more hydrostatic, so less surface back-pressure is needed.' },
-        ]
-      },
-      {
-        prompt: 'String volume = 120 bbl at 30 spm. Pump output = 0.1 bbl/stroke. Calculate: strokes to bit and surface-to-bit time.',
-        options: [
-          { text: 'Strokes to bit = 1200 strokes; Time = 40 minutes', correct: true, why: 'Strokes to bit = Volume ÷ Output = 120 ÷ 0.1 = 1200 strokes. At 30 spm: Time = 1200 ÷ 30 = 40 min. This tells you exactly when kill mud reaches the bit — the pressure schedule covers this period.', calc: 'String Volume = 120 bbl\nPump Output = 0.1 bbl/stroke\nStrokes to Bit = 120 ÷ 0.1 = 1200 strokes\n\nAt 30 spm:\nTime = 1200 ÷ 30 = 40 minutes\n\nPressure drops from 1170 psi at stroke 0\nto 811 psi at stroke 1200 (when kill mud reaches bit)\nDrop per stroke = (1170 - 811) ÷ 1200 = 0.30 psi/stroke' },
-          { text: 'Strokes to bit = 120 strokes; Time = 4 minutes', correct: false, why: 'You divided volume by pump rate (spm), not pump output (bbl/stroke). You must divide VOLUME (bbl) by OUTPUT (bbl/stroke) to get strokes, not spm.' },
-          { text: 'Strokes to bit = 1200 strokes; Time = 20 minutes', correct: false, why: 'Strokes correct (1200) but time wrong. At 30 spm: 1200 ÷ 30 = 40 minutes, not 20.' },
-          { text: 'Strokes to bit = 2400 strokes; Time = 80 minutes', correct: false, why: 'Pump output is 0.1 bbl/stroke, not 0.05. 120 ÷ 0.1 = 1200 strokes. Check your pump output value.' },
-        ]
-      }
-    ]
-  },
+    const statusByKeyword = [
+      ['Subsea', 'Subsea stack lined up, marine riser connected'],
+      ['BOP', 'BOP pressure-control checks in progress'],
+      ['Diverter', 'Top-hole contingency drill active'],
+      ['Exam Practice', 'Mock exam progression active'],
+      ['Cementing', 'Cementing phase under pressure monitoring'],
+      ['Tripping', 'Pipe movement operation under trip-sheet watch'],
+      ['HP/HT', 'HP/HT control envelope under strict monitoring']
+    ];
 
-  // ══════════════════════════════════════════════════
-  // 3. WAIT & WEIGHT METHOD (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'wait-weight',
-    name: 'Wait & Weight Method — Execution',
-    difficulty: 'medium',
-    brief: {
-      depth: '9,000 ft TVD',
-      mw: '10.4 ppg',
-      formation: 'Oil sand — SIDPP = 260 psi after shut-in',
-      status: 'Well shut in — selecting kill method',
-    },
-    objective: `You've taken a kick while drilling. Well is shut in. <strong>SIDPP = 260 psi, SICP = 380 psi</strong>. Kick size = 8 bbl (likely oil). SCR = 700 psi. You choose Wait & Weight. Execute the method correctly.`,
-    kickSize: 8, sidpp: 260, sicp: 380,
-    tvd: 9000, mwIn: 10.4, shoeDepth: 6500, lotEMW: 14.0, pumpRate: 55,
-    steps: [
-      {
-        prompt: 'Before starting Wait & Weight, what must you calculate and prepare FIRST?',
-        options: [
-          { text: 'Kill MW, ICP, FCP, and full pressure schedule before starting pump', correct: true, why: 'Wait & Weight requires everything prepared before pumps start. You need: KMW, ICP = SCR + SIDPP, FCP = SCR × KMW/OMW, and a step-by-step DP pressure schedule. Only then start the pump and follow the schedule exactly.', calc: 'KMW = 10.4 + (260 ÷ (0.052 × 9000)) = 10.4 + 0.556 = 10.956 → 11.0 ppg\nSCR = 700 psi\nICP = 700 + 260 = 960 psi\nFCP = 700 × (11.0 ÷ 10.4) = 740 psi\nSchedule: 960 → 740 psi as kill mud descends string' },
-          { text: 'Kill MW only — start pumping immediately and monitor pressures', correct: false, why: 'Starting without a pressure schedule means you have no reference to control BHP during the kill. Without ICP and FCP, you cannot tell if you are over- or under-pressuring the well.' },
-          { text: 'Bleed off SICP first, then calculate from zero reference', correct: false, why: 'NEVER bleed SICP before kill operation. SICP holds the formation back. Bleeding it reduces BHP, allows MORE influx, and grows the kick volume. Record and use it — never bleed it.' },
-          { text: 'Check MAASP only — if shoe safe, start pumping', correct: false, why: 'MAASP alone is insufficient. Without ICP/FCP/schedule, you have no control parameters for the kill pump operation.' },
-        ]
-      },
-      {
-        prompt: 'Kill mud is mixed to 11.0 ppg. Starting the pump. What EXACT DP pressure must you hold when you START?',
-        options: [
-          { text: '960 psi — ICP = SCR + SIDPP = 700 + 260', correct: true, why: 'Correct. ICP is your starting pressure. As pump speed builds to SCR, adjust choke to arrive at exactly 960 psi on the DP gauge. From this point, reduce DP pressure per schedule as kill mud descends.', calc: 'Pump Startup Procedure:\n1. Slowly bring pump to 55 spm (SCR)\n2. Adjust choke to achieve DP = 960 psi (ICP)\n3. Confirm pump at SCR and DP = ICP\n4. Begin following pressure schedule\n   → DP drops from 960 → 740 psi\n5. SICP will fluctuate — do not chase SICP' },
-          { text: '260 psi — hold SIDPP throughout the kill', correct: false, why: 'SIDPP is the shut-in value with no circulation. Once pumping, friction adds to pressure. Holding only 260 psi while pumping would UNDERBALANCE the formation — more influx enters.' },
-          { text: '700 psi — hold only the SCR pressure', correct: false, why: 'SCR = 700 is friction loss ONLY. During kill, you need SCR + SIDPP = 960 psi to account for both friction and the underbalance. Holding 700 = underbalance by 260 psi.' },
-          { text: '380 psi — hold SICP on the drill pipe gauge', correct: false, why: 'SICP is the ANNULUS pressure. In Wait & Weight, you control the DRILL PIPE pressure per schedule. SICP is monitored but not used as the control parameter.' },
-        ]
-      },
-      {
-        prompt: 'Kill mud halfway down string. Schedule says DP = 850 psi. Actual DP = 920 psi. Action?',
-        options: [
-          { text: 'Open choke slightly to reduce DP pressure to 850 psi', correct: true, why: 'Actual > Schedule = BHP too HIGH = risk of shoe fracture. Open choke → reduces back-pressure → DP drops to schedule value. Choke is your throttle: open = reduce BHP, close = increase BHP.', calc: 'DP 920 vs Schedule 850 → +70 psi over\nMeans: BHP too high → risk fracture at shoe\nCorrection: Open choke slightly\nEffect: Annulus pressure drops → DP drops\nTarget: DP = 850 psi (follow schedule)\nTolerance: ±50 psi maximum deviation' },
-          { text: 'Close choke to build more pressure for kill', correct: false, why: 'Already 70 psi ABOVE schedule. Closing adds even more pressure — worsens shoe fracture risk. Open, not close.' },
-          { text: 'Increase pump rate to push kill mud faster', correct: false, why: 'Changing pump rate invalidates the kill sheet (all calculations at SCR). Maintain pump rate constant — adjust choke only.' },
-          { text: 'Do nothing — 70 psi variance is acceptable', correct: false, why: '70 psi above schedule is NOT acceptable near MAASP limits. In a tight well, 70 psi could mean the difference between success and shoe fracture.' },
-        ]
-      }
-    ]
-  },
+    function round(value, decimals) {
+      const p = 10 ** decimals;
+      return Math.round(value * p) / p;
+    }
 
-  // ══════════════════════════════════════════════════
-  // 4. SWAB KICK DURING TRIPPING (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'swab-kick',
-    name: 'Swab Kick During POOH — Trip Sheet Analysis',
-    difficulty: 'medium',
-    brief: {
-      depth: '9,200 ft MD / 8,800 ft TVD',
-      mw: '10.8 ppg',
-      formation: 'Gas reservoir at 9,000 ft — Pore Pressure 11.0 ppg',
-      status: 'Pulling out of hole — currently at 6,000 ft MD',
-    },
-    objective: `You are pulling out of hole at 3,000 ft/hr. The trip tank shows hole filling <strong>less than predicted</strong> — you should be getting 8.5 bbl per stand, but you're only getting 5 bbl. Trip sheet shows a cumulative deficit of 25 bbl. What happened and what do you do?`,
-    kickSize: 12, sidpp: 300, sicp: 450,
-    tvd: 8800, mwIn: 10.8, shoeDepth: 7000, lotEMW: 14.2, pumpRate: 50,
-    steps: [
-      {
-        prompt: 'Trip tank shows 25 bbl less fill than predicted while pulling stands. What is the most likely cause?',
-        options: [
-          { text: 'Swabbing — reduced BHP while pulling pipe has allowed formation fluid to enter the well', correct: true, why: 'Correct! When you pull pipe out of a near-balanced well, the pipe acts like a piston and reduces bottom-hole pressure (swab effect). If formation pressure exceeds this reduced BHP, fluids enter. The trip tank shortfall = volume of formation fluid that replaced what was supposed to be mud.', calc: 'Expected fill per stand = 8.5 bbl (pipe displacement)\nActual fill = 5 bbl per stand\nShortfall per stand = 3.5 bbl\nAfter ~7 stands: Cumulative deficit = 25 bbl\nThis deficit = kick volume that swabbed in\n25 bbl kick = SIGNIFICANT — immediate action required' },
-          { text: 'Caliper errors — the wellbore is larger than planned', correct: false, why: 'A larger wellbore would cause MORE fill, not less. You would need MORE mud to fill an oversized hole. Less fill = something else is filling the space, i.e., formation fluid.' },
-          { text: 'Pump efficiency loss — you are not measuring fill accurately', correct: false, why: 'Trip tank fill is measured by level, not pump output. A trip tank is a dedicated small tank with sensitive measurement. The shortfall is real.' },
-          { text: 'Cement channelling from the previous casing job', correct: false, why: 'Cement channelling is a long-term integrity issue. It would not cause acute trip tank shortfalls during a normal POOH operation in real time.' },
-        ]
-      },
-      {
-        prompt: 'You suspect a 25 bbl swab kick. The bit is at 6,000 ft (open hole section starts at 7,000 ft). What is the correct action?',
-        options: [
-          { text: 'Stop tripping, set pipe on slips, do a flow check, if flow — shut in immediately', correct: true, why: 'STOP TRIPPING immediately. Set pipe safely. Perform a flow check on the trip tank — if the well is still flowing with no pump running, the kick is confirmed. Shut in on annular BOP immediately and record SIDPP/SICP.', calc: 'Decision Sequence:\n1. STOP tripping\n2. Set pipe on slips (safely secured)\n3. Check trip tank for flow (1-2 mins)\n4. If YES FLOW: SHUT IN hard\n   Close annular BOP\n   Record SIDPP, SICP\n5. Assess: bit off bottom → consider stripping back\n   OR circulate from current depth if safe' },
-          { text: 'Continue pulling out — get the string to surface before shutting in', correct: false, why: 'NEVER continue pulling with an active kick. Each stand pulled further reduces hydrostatic, increasing kick volume. You must stop and check IMMEDIATELY.' },
-          { text: 'Increase trip speed to get pipe out faster', correct: false, why: 'Increasing speed worsens swabbing. Faster pipe movement = greater piston effect = lower BHP = more influx. Stop, do not speed up.' },
-          { text: 'Run back to bottom and circulate before checking for flow', correct: false, why: 'You must flow check FIRST before running back. If the well is flowing, running back in blindly could push the influx toward surface on the way in (surge effect on top of swab kick).' },
-        ]
-      },
-      {
-        prompt: 'Well is shut in. SIDPP = 300 psi, SICP = 450 psi. Bit is at 6,000 ft (3,000 ft off bottom). What do you recommend?',
-        options: [
-          { text: 'Strip pipe back to bottom under pressure, then circulate out the kick using Driller\'s Method', correct: true, why: "Correct. With bit 3,000 ft off bottom, you cannot circulate out the kick effectively from current depth — the open hole section may have gas migrating. Strip pipe back to within circulating range of bottom, then use Driller's Method (or W&W) to circulate out.", calc: "Options Assessment:\n1. Strip to bottom: BOP maintained closed, pipe moved in\n   under pressure through annular BOP/rams\n2. At bottom: Use Driller's Method\n   Circ 1: Hold SICP constant = 450 psi\n   KMW = 10.8 + (300 ÷ (0.052 × 8800))\n        = 10.8 + 0.656 = 11.5 ppg\n3. Alternative: Volumetric method if cannot go back" },
-          { text: 'Kill at current depth — circulate with kill mud from 6,000 ft', correct: false, why: 'Circulating from 6,000 ft when the open hole zone starts at 7,000 ft means you are NOT circulating past the open formation. The kick and any gas migration in open hole will not be properly addressed.' },
-          { text: 'Open choke slowly and bleed the kick out at surface', correct: false, why: 'Bleeding kick out from 3,000 ft off bottom with an uncontrolled annulus is dangerous — gas will expand rapidly as it rises, and without proper BHP monitoring, blowout risk is high.' },
-          { text: 'Abandon the string, set a cement plug and sidetrack', correct: false, why: 'This is an extreme last resort, not a first response to a swab kick with 300 psi SIDPP. A 25 bbl swab kick in a normal well can be managed with standard kill methods.' },
-        ]
-      }
-    ]
-  },
+    function ceil1(value) {
+      return Math.ceil(value * 10) / 10;
+    }
 
-  // ══════════════════════════════════════════════════
-  // 5. LOST CIRCULATION (EASY)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'lost-circ',
-    name: 'Lost Circulation — Recognition & Response',
-    difficulty: 'easy',
-    brief: {
-      depth: '7,200 ft TVD',
-      mw: '11.5 ppg',
-      formation: 'Fractured Limestone — Natural Fractures',
-      status: 'Drilling ahead at 30 ft/hr',
-    },
-    objective: `While drilling, you observe a <strong>sudden drop in pit volume by 8 bbl</strong> in 10 minutes. Flow returns are decreasing but pumps are running normally at constant rate. There is NO flow return increase. Identify and respond correctly.`,
-    kickSize: 0, sidpp: 0, sicp: 0,
-    tvd: 7200, mwIn: 11.5, shoeDepth: 5500, lotEMW: 14.0, pumpRate: 55,
-    steps: [
-      {
-        prompt: 'Pit volume drops 8 bbl. Flow return decreases. Pump pressure is unchanged. What is happening?',
-        options: [
-          { text: 'Lost circulation — mud is entering natural fractures or induced fractures in the formation', correct: true, why: 'Classic lost circ: pit volume DROPS, flow returns REDUCE or stop, pump pressure may stay normal (partial loss) or drop (complete loss). Mud is going INTO the formation.', calc: 'Lost Circ Volume = 8 bbl in 10 min\nLoss Rate = 0.8 bbl/min = 48 bbl/hr\nPartial Loss: Some return still present\nSeverity: MODERATE (>5 bbl/hr threshold)\nRisk: If losses continue AND well is underbalanced\n      → Combined loss/gain = blowout risk' },
-          { text: 'Gas kick — gas reducing hydrostatic and pit volume', correct: false, why: 'In a kick, pit volume INCREASES and flow returns INCREASE. Decreasing pit + decreasing returns = lost circulation, not a kick.' },
-          { text: 'Swab kick — pipe movement pulling fluid in', correct: false, why: 'Swabbing requires pipe movement (POOH). Pumps are running normally with no tripping — this rules out swab.' },
-          { text: 'Bit plugged — circulation restricted causing misleading readings', correct: false, why: 'A plugged bit increases pump pressure (more restriction) and would not cause pit volume loss.' },
-        ]
-      },
-      {
-        prompt: 'Lost circulation confirmed. Flow returns at 50%. What is the FIRST corrective action sequence?',
-        options: [
-          { text: 'Stop drilling, slow pump rate, check pit volume trend, spot LCM pill across loss zone', correct: true, why: 'Stop drilling to halt further penetration into fractures. Reduce pump rate to lower ECD. Check trend to assess severity. Spot an LCM (Lost Circulation Material) pill to bridge fractures.', calc: 'ECD Reduction:\nECD = MW + (P_ann ÷ (0.052 × TVD))\nLower SPM → Lower P_ann → Lower ECD → Less fracture drive\n\nLCM Options:\n  Fibrous: cedar bark, wood fibre\n  Flake: cellophane, mica\n  Granular: calcium carbonate, walnut shells\nConc: 20-50 lb/bbl depending on severity\nSpot across loss zone, leave 2hrs before circulating' },
-          { text: 'Increase pump rate to maintain hydrostatic column', correct: false, why: 'Increasing pump rate INCREASES ECD — worsens losses. Lower pump rate, not higher.' },
-          { text: 'Mix heavier mud to restore hydrostatic quickly', correct: false, why: 'Heavier mud = higher hydrostatic = wider fractures = more losses. Use LCM, not heavier mud, to fight lost circulation.' },
-          { text: 'Shut in BOP immediately', correct: false, why: 'BOPs are for kicks, not lost circulation. With losses, there is no influx — shutting in traps pressure and could make things worse.' },
-        ]
-      }
-    ]
-  },
+    function withCommas(value) {
+      return String(Math.round(value)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
 
-  // ══════════════════════════════════════════════════
-  // 6. SHALLOW GAS EVENT (HARD)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'shallow-gas',
-    name: 'Shallow Gas Blowout — Diverter Operations',
-    difficulty: 'hard',
-    brief: {
-      depth: '800 ft TVD — Top Hole Conductor Phase',
-      mw: '8.8 ppg (sea water with gel)',
-      formation: 'Shallow gas pocket — no BOP installed',
-      status: 'Drilling top hole — no BOP, diverter available',
-    },
-    objective: `You are drilling top hole at 800 ft with no BOP installed. You have only a <strong>diverter system</strong>. Suddenly <strong>pit volume increases 5 bbl rapidly</strong>, flow returns increase dramatically, and gas detector alarms activate. This is a shallow gas blowout scenario.`,
-    kickSize: 50, sidpp: 0, sicp: 0,
-    tvd: 800, mwIn: 8.8, shoeDepth: 200, lotEMW: 10.0, pumpRate: 80,
-    steps: [
-      {
-        prompt: 'Shallow gas blowout in progress. No BOP installed. What is your IMMEDIATE first action?',
-        options: [
-          { text: 'Activate gas alarm, muster non-essential personnel to muster points, stop drilling', correct: true, why: 'Life safety is the ABSOLUTE priority. Shallow gas contains H2S risk and explosion hazard. Sound the alarm, muster non-essential personnel, stop drilling operations. Only essential well control personnel remain.', calc: 'Shallow Gas Priority Sequence:\n1. LIFE SAFETY — Sound GA alarm\n2. Muster non-essential personnel\n3. Stop drilling operations\n4. Activate diverter\n5. Maintain pump rate\n6. Personnel upwind/safe distance\nH2S: IDLH = 10 ppm — SCBA required above 1 ppm' },
-          { text: 'Close the annular BOP immediately', correct: false, why: 'There IS no BOP installed in top hole drilling phase. This is why the diverter exists. Attempting to close a non-existent BOP wastes critical seconds.' },
-          { text: 'Increase mud weight immediately', correct: false, why: 'No time to mix mud. Shallow gas can blowout within minutes. Personnel safety and diverter activation are immediate priorities.' },
-          { text: 'Continue drilling to get through the gas zone quickly', correct: false, why: 'Drilling into an active blowout with H2S risk on the drill floor is immediately life-threatening. STOP all drilling operations.' },
-        ]
-      },
-      {
-        prompt: 'Non-essential personnel evacuated. Gas flowing to surface. You have a diverter. What do you do?',
-        options: [
-          { text: 'Activate diverter (open vent lines first, then close rotating element), maintain or increase pump rate', correct: true, why: 'The diverter vents gas AWAY from the rig. Critical: open vent lines BEFORE closing rotating element to avoid building pressure that could fracture the shallow formation. Maintain pump rate to prevent gas stalling under rig floor.', calc: 'Diverter Procedure (API RP 64):\n1. Open diverter vent line (downwind side)\n2. Close rotating/diverter element\n3. Flow: Well → Diverter → Vent Line → Safe point\n4. Maintain pump circulation\n5. NEVER close vent with diverter closed\n   → Would build pressure → crater / shallow fracture\n6. Monitor for rig floor gas levels\n7. Do NOT attempt shut-in — cannot seal shallow gas' },
-          { text: 'Close diverter fully and shut in the well like a normal kick', correct: false, why: 'WRONG. Shutting in a shallow gas well builds pressure against unconsolidated shallow formations, causing CRATERING (subsidence around wellbore) — catastrophic ground failure. Diverter = DIVERT the flow away, not shut in.' },
-          { text: 'Reduce pump rate to minimum to save mud', correct: false, why: 'Reducing pump rate reduces hydrostatic and allows gas to migrate upward faster. Maintain pump rate to continue filling the hole and help resist gas flow.' },
-          { text: 'Run casing to surface immediately to contain the flow', correct: false, why: 'Running casing into a live blowout is impossible and extremely dangerous. Diverter activation is the immediate action.' },
-        ]
-      },
-      {
-        prompt: 'Gas flow has reduced. What do you do before resuming drilling?',
-        options: [
-          { text: 'Shut down, make safe, check H2S levels, inspect equipment, notify company/operator, log incident, await approval', correct: true, why: 'After any well control event: verify well is safe (H2S < 1 ppm), inspect all equipment for damage (erosion of vent lines is common in shallow gas), file formal incident report, notify operator and regulator, and do not resume without proper review and sign-off.', calc: 'Post-Event Checklist:\n✓ H2S monitoring: <1 ppm (SCBA not required)\n✓ Vent lines: check for erosion damage\n✓ Pit volumes stabilized\n✓ Formation log reviewed for more gas zones\n✓ Incident report filed\n✓ Company Man, OIM, Operator notified\n✓ Regulatory notification if required\n✓ Approval before resuming operations' },
-          { text: 'Resume drilling immediately — gas show reduced, zone likely passed', correct: false, why: 'A reduction does not mean the zone is safely passed. Equipment must be checked for damage (vent line erosion is rapid in shallow gas). Formal review is required.' },
-          { text: 'Increase mud weight to 12 ppg to prevent recurrence', correct: false, why: 'At 800 ft with a low fracture gradient, 12 ppg would fracture the formation immediately. Shallow wells have very low MAASP. Mud weight changes require engineering assessment.' },
-          { text: 'Open diverter and vent to atmosphere to clear gas fully', correct: false, why: 'Diverter should remain in safe configuration until well is verified stable. Gas release to atmosphere without control creates explosion and H2S hazard.' },
-        ]
-      }
-    ]
-  },
+    function toId(n) {
+      return `s${String(n).padStart(2, '0')}`;
+    }
 
-  // ══════════════════════════════════════════════════
-  // 7. INFLUX CHARACTERISTICS — GAS EXPANSION (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'influx-characteristics',
-    name: 'Influx Characteristics — Gas Behaviour',
-    difficulty: 'medium',
-    brief: {
-      depth: '10,000 ft TVD',
-      mw: '11.0 ppg',
-      formation: 'Gas — 30 bbl kick taken at 10,000 ft',
-      status: 'Well shut in — SIDPP stable, SICP rising',
-    },
-    objective: `A 30 bbl gas kick has been shut in. <strong>SIDPP = 400 psi (stable). SICP = 600 psi and RISING at 5 psi/min.</strong> No circulation has started. The well is fully shut in. Understand what is happening and what to do.`,
-    kickSize: 30, sidpp: 400, sicp: 600,
-    tvd: 10000, mwIn: 11.0, shoeDepth: 7200, lotEMW: 14.5, pumpRate: 45,
-    steps: [
-      {
-        prompt: 'SIDPP is stable at 400 psi but SICP is rising 5 psi/min. What is happening?',
-        options: [
-          { text: 'Gas migration — gas influx is rising in the annulus, expanding and increasing surface pressure', correct: true, why: 'Classic gas migration: SIDPP stays stable (bit is at bottom, balanced) but SICP rises as gas migrates upward. Gas expands as it rises (lower pressure), increasing volume and surface pressure. In a shut-in well, this can eventually fracture the shoe.', calc: 'Gas Migration Rate:\nSICP rise = 5 psi/min = 300 psi/hr\nMigration rate estimate: ~100-200 ft/hr (typical)\nIn 1 hour: SICP could reach 600 + 300 = 900 psi\nMAAPS = (14.5 - 11.0) × 0.052 × 7200 = 1310 psi\nTime to MAASP: (1310 - 600) ÷ 5 = 142 min = ~2.4 hrs\nAction needed before SICP reaches MAASP' },
-          { text: 'A second kick is entering the well from a deeper zone', correct: false, why: 'A second kick would show SIDPP rising too. SIDPP stable + SICP rising = gas migration of the original influx, not a new kick entering.' },
-          { text: 'Pump is running and circulation has started accidentally', correct: false, why: 'If pump were running, SIDPP would rise and SICP would fall (circulation). Both rising or SICP alone rising with SIDPP stable = migration of shut-in gas.' },
-          { text: 'The wellbore is supercharged from a nearby well', correct: false, why: 'Supercharging from nearby injection wells causes both SIDPP and SICP to rise together. Differential rise (SICP rises, SIDPP stable) is gas migration.' },
-        ]
-      },
-      {
-        prompt: 'Gas migration is confirmed. SICP is approaching MAASP. What do you do to manage the migration?',
-        options: [
-          { text: 'Apply the Volumetric Method — bleed fluid to maintain constant BHP while allowing gas to rise', correct: true, why: 'The Volumetric Method controls gas migration by bleeding small volumes of mud (allowing gas to rise and expand) while maintaining constant BHP. Every time SICP rises by a set increment, bleed a calculated volume to bring it back down.', calc: 'Volumetric Method:\n1. Set safety margin: e.g., 100 psi above SIDPP equivalent\n2. Allow SICP to rise by safety increment (e.g., 50 psi)\n3. Bleed volume = SICP rise × wellbore capacity\n   Bleed volume = (50 ÷ 0.052 ÷ 11.0) × annulus cap/ft\n4. SICP returns to safety margin pressure\n5. Repeat as gas migrates upward\n6. When gas reaches near-surface: Lubricate & Bleed' },
-          { text: 'Open choke fully to allow gas to escape to surface', correct: false, why: 'Opening choke fully with no controlled circulation reduces BHP rapidly as gas expands — potentially allowing massive influx. Bleed must be CONTROLLED and CALCULATED.' },
-          { text: 'Start kill circulation immediately without a kill sheet', correct: false, why: 'Starting circulation without a kill sheet means no pressure schedule, no ICP, no FCP — you cannot control BHP during the kill. Prepare the kill sheet first, then start controlled circulation.' },
-          { text: 'Do nothing — SIDPP is stable so the well is balanced', correct: false, why: 'SIDPP stable does NOT mean the well is OK. SICP rising means MAASP is being approached. Uncontrolled gas migration in a shut-in well can fracture the shoe and create an underground blowout.' },
-        ]
-      },
-      {
-        prompt: 'During Volumetric Method, SICP rises to safety margin + 50 psi. How much volume do you bleed?',
-        options: [
-          { text: 'Calculate bleed volume from pressure increment, annulus capacity, and MW', correct: true, why: 'Bleed volume = (Pressure increment ÷ (0.052 × MW)) × annulus capacity per foot. This maintains the same BHP while allowing gas to occupy the new volume. Never bleed arbitrary volumes — always calculate.', calc: 'Bleed Volume Calculation:\nPressure Increment = 50 psi\nMW = 11.0 ppg\nHeight of mud column equivalent:\n  h = 50 ÷ (0.052 × 11.0) = 50 ÷ 0.572 = 87.4 ft\nIf annulus capacity = 0.05 bbl/ft:\n  Bleed Volume = 87.4 × 0.05 = 4.4 bbl\nBleed 4.4 bbl, then check SICP has returned to safety margin\nIf not, recalculate — gas has expanded more than expected' },
-          { text: 'Bleed 10 bbl — a round number is close enough', correct: false, why: 'Never use round numbers for volumetric bleeds. Too much bleed reduces BHP below pore pressure — more influx enters. Too little does not relieve the pressure. Use the formula.' },
-          { text: 'Bleed until SICP drops to 0 psi', correct: false, why: 'Bleeding to 0 SICP massively reduces BHP below pore pressure — catastrophic influx. You bleed only enough to return to the safety margin pressure, nothing more.' },
-          { text: 'Bleed until SIDPP also drops by 50 psi', correct: false, why: 'SIDPP is your BHP reference — you should MAINTAIN it constant during volumetric method, not reduce it. If SIDPP drops, you have reduced BHP below safe limit.' },
-        ]
+    function q(prompt, correctText, correctWhy, wrongs, calc) {
+      if (!Array.isArray(wrongs) || wrongs.length !== 3) {
+        throw new Error('Each question must have exactly 3 wrong options');
       }
-    ]
-  },
+      const options = [
+        {
+          text: correctText,
+          correct: true,
+          why: correctWhy,
+          ...(calc ? { calc } : {})
+        },
+        ...wrongs.map((w) => ({
+          text: w.text,
+          correct: false,
+          why: w.why
+        }))
+      ];
+      return { prompt, options };
+    }
 
-  // ══════════════════════════════════════════════════
-  // 8. BOP OPERATIONS — HARD SHUT IN (EASY)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'bop-shut-in',
-    name: 'BOP Operations — Hard Shut In Procedure',
-    difficulty: 'easy',
-    brief: {
-      depth: '8,000 ft TVD',
-      mw: '10.5 ppg',
-      formation: 'Gas sand — pore pressure 10.9 ppg equiv.',
-      status: 'Drilling ahead — kick warning signs developing',
-    },
-    objective: `You are drilling ahead. Pit volume has gained 3 bbl. Flow is confirmed when you stop pumps. You must perform a <strong>hard shut-in procedure</strong> correctly. BOP stack has: Annular BOP, Pipe Rams (variable), Blind/Shear Rams. Choke manifold has remote and manual chokes.`,
-    kickSize: 8, sidpp: 320, sicp: 440,
-    tvd: 8000, mwIn: 10.5, shoeDepth: 6000, lotEMW: 14.3, pumpRate: 55,
-    steps: [
-      {
-        prompt: 'Flow check confirms well is flowing. What is the HARD SHUT IN sequence?',
-        options: [
-          { text: '1.Stop pump, 2.Pick up to space out, 3.Close annular BOP, 4.Open HCR valve (if applicable), 5.Check for flow, 6.Close choke manifold HCR, 7.Record SIDPP & SICP', correct: true, why: 'Hard shut-in: immediate BOP closure without hesitation. Annular first (seals around any pipe), then choke manifold valves. Record stabilised pressures. "Hard" = no controlled bleed-off before closure — close quickly.', calc: 'Hard Shut-In Checklist:\n✓ Stop pump\n✓ Pick up off bottom (space out tool joint above rotary)\n✓ Close ANNULAR BOP (fastest to close, seals any size pipe)\n✓ Open choke-side HCR valve\n✓ Verify: No blowback through choke manifold\n✓ Close choke manifold valve\n✓ Check: DP gauge and Casing gauge rising then stabilising\n✓ Record: SIDPP (stabilised) and SICP (stabilised)\n✓ Notify: Toolpusher / Company Man immediately' },
-          { text: '1.Close choke first, 2.Then close annular, 3.Then stop pump', correct: false, why: 'Stop pump FIRST (before closing choke or BOP). Closing choke first with pump running builds surge pressure. Correct sequence: stop pump → pick up → close annular → choke manifold.' },
-          { text: '1.Close blind shear rams first for maximum sealing', correct: false, why: 'Blind/Shear rams are a LAST RESORT. With drill pipe in hole, closing blind shears SEVERS the pipe — you lose your kill path through the string. ALWAYS close annular or pipe rams first when drill string is in the BOP.' },
-          { text: '1.Bleed 1-2 bbl slowly to verify it is a real kick before shutting in', correct: false, why: 'NEVER bleed fluid to confirm a kick. Bleeding reduces BHP — more influx enters. Perform flow check (stop pumps, watch flow) — that is enough to confirm. Then shut in immediately.' },
-        ]
-      },
-      {
-        prompt: 'Well shut in. SIDPP rising slowly — has not yet stabilised after 5 minutes. What does this mean?',
-        options: [
-          { text: 'Influx is still entering the well — formation pressure > current BHP (still underbalanced)', correct: true, why: 'Rising SIDPP after shut-in = well is still taking influx because BHP < pore pressure. Wait for complete stabilisation before using SIDPP for kill calculations. Record the final stable value.', calc: 'Pressure Build-up Analysis:\nRising SIDPP → Well still underbalanced\nStill-rising SICP → More influx entering\nWait until BOTH pressures stabilise\nStabilisation time: 5-30 minutes typically\nNote: Slowly-rising SIDPP can also indicate:\n  → Tight formation (slow matrix permeability)\n  → Influx still migrating in the annulus\n  → Gauge lag (remote gauges may respond slowly)' },
-          { text: 'The BOP has a leak — pressure is bypassing into the annulus', correct: false, why: 'A BOP leak would cause SICP to build (pressure from wellbore into annulus above BOP) and would typically show both gauges behaving erratically. Rising SIDPP alone = continued influx from formation.' },
-          { text: 'The pressure is hydrostatic stabilisation — normal within 60 seconds', correct: false, why: 'Hydrostatic stabilisation takes seconds to a few minutes for the gauge column to equalise. If SIDPP is still rising at 5 minutes, it is not just column stabilisation — it is continued influx.' },
-          { text: 'Float valve in string is preventing SIDPP reading — bleed off to check', correct: false, why: 'A float valve would cause SIDPP = 0 (not rising). Rising SIDPP means you CAN read pressure — it is just still building. Never bleed off pressure to investigate.' },
-        ]
-      },
-      {
-        prompt: 'SIDPP stabilises at 320 psi. SICP stabilises at 440 psi. Difference = 120 psi. What does this tell you about the influx?',
-        options: [
-          { text: 'The influx is gas — low density influx gives higher SICP vs SIDPP difference', correct: true, why: 'SICP > SIDPP by 120 psi indicates the influx has LOWER density than the original mud. Gas is much lighter than mud, so a gas influx column exerts less hydrostatic — SICP must be higher to balance the same BHP. Water kicks show smaller SICP-SIDPP difference.', calc: 'SIDPP = 320 psi (underbalance at bit)\nSICP = 440 psi\nDifference = 120 psi\n\nInflux Height (approx):\nh = 120 ÷ ((0.052 × 11.0) - (0.052 × 0.1))\n  Note: Gas density ≈ 0.1 ppg\n  h = 120 ÷ (0.572 - 0.005) = 120 ÷ 0.567 ≈ 212 ft\nLarge difference + significant height = GAS influx\nSmall difference = water or oil influx' },
-          { text: 'The influx is water — water has high density pushing SICP up', correct: false, why: 'Water influx (density ~8.3 ppg, similar to mud at ~10.5 ppg) would give a SMALL difference between SIDPP and SICP. A 120 psi difference indicates a very light fluid — consistent with gas.' },
-          { text: 'SIDPP gauge is inaccurate — both readings should be the same', correct: false, why: 'SIDPP and SICP are rarely equal. They represent pressure at different points in the wellbore with different fluid columns. The difference gives information about influx type and density.' },
-          { text: 'There is trapped pressure from incorrect shut-in procedure', correct: false, why: 'Trapped pressure would affect both gauges unpredictably. The consistent pattern of SICP > SIDPP with specific difference is diagnostic of influx type and height.' },
-        ]
-      }
-    ]
-  },
+    function facets(name) {
+      const parts = name.split(' - ');
+      const base = parts[0];
+      const qual = parts[1] || 'Operations';
+      return {
+        a: `${base} data quality`,
+        b: `${base} operational control`,
+        c: `${qual} troubleshooting`
+      };
+    }
 
-  // ══════════════════════════════════════════════════
-  // 9. WELL CONTROL DURING TRIPPING — FLOAT VALVE (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'float-valve-shut-in',
-    name: 'Float Valve in String — Reading SIDPP',
-    difficulty: 'medium',
-    brief: {
-      depth: '9,500 ft TVD',
-      mw: '11.2 ppg',
-      formation: 'Gas reservoir — kick while tripping',
-      status: 'Well shut in — SIDPP reads 0 psi',
-    },
-    objective: `You are tripping back to bottom and take a kick. Well is shut in. <strong>SICP reads 520 psi, but SIDPP reads 0 psi.</strong> You know a float valve is installed in the BHA. You need to establish the true SIDPP before you can calculate kill parameters.`,
-    kickSize: 12, sidpp: 380, sicp: 520,
-    tvd: 9500, mwIn: 11.2, shoeDepth: 7000, lotEMW: 14.6, pumpRate: 45,
-    steps: [
-      {
-        prompt: 'SICP = 520 psi, SIDPP = 0 psi. Float valve is in the string. Why is SIDPP zero?',
-        options: [
-          { text: 'The float valve is preventing pressure communication up the drill string — it is holding pressure back', correct: true, why: 'A float valve (non-return valve) in the BHA prevents fluid/gas from flowing back UP through the drill string. When the well is shut in, the formation pressure cannot push up through the float — so SIDPP stays at 0. SICP still reads correctly.', calc: 'Float Valve Effect:\nSICP = 520 psi ✓ (reads through annulus — no float in annulus)\nSIDDP = 0 psi ✗ (float blocks pressure up drill string)\n\nThe actual formation underbalance = SICP does NOT equal SIDPP\nWe must find true SIDPP by slowly pumping until float opens\nTrue SIDPP will be revealed when drill pipe pressure peaks then\nstabilises (float opens, pressure equalises with formation)' },
-          { text: 'The kick is in the annulus only — no pressure has entered the drill string', correct: false, why: 'Even with no fluid in the string, the BOTTOM of the string is exposed to formation pressure. Without a float valve, SIDPP would still read. The 0 reading is entirely due to the float blocking upward communication.' },
-          { text: 'The SIDPP gauge is broken and needs replacement', correct: false, why: 'Possible, but the first assumption with a float in the string and SIDPP = 0 is that the float is blocking pressure. Confirm by slowly pumping to test the float before assuming gauge failure.' },
-          { text: 'The well is balanced — zero SIDPP means no underbalance', correct: false, why: 'If SIDPP = 0 truly, SICP would also = 0. SICP = 520 psi means there IS underbalance. The zero SIDPP is due to the float, not well balance.' },
-        ]
-      },
-      {
-        prompt: 'How do you get the TRUE SIDPP with a float valve in the string?',
-        options: [
-          { text: 'Slowly pump a small volume down the drill string and watch for pressure stabilisation — the float opens when drill pipe pressure exceeds formation pressure', correct: true, why: 'With the choke closed, slowly pump small volumes (0.1 bbl increments). The float valve will open when your pump pressure exceeds formation pressure. At this point, SIDPP will peak and then stabilise as drill pipe and formation reach equilibrium. That stabilised value is your true SIDPP.', calc: 'Float Valve Technique:\n1. Close choke manifold\n2. Slowly pump at minimum rate (5-10 spm)\n3. Watch DP gauge: will rise slowly\n4. Float opens when DP pressure > Formation pressure\n5. DP pressure will peak then STABILISE\n6. That stable DP pressure = true SIDPP\n7. Record: SIDPP = 380 psi (example)\n8. Now calculate: KMW = 11.2 + (380 ÷ (0.052 × 9500)) = 11.97 ppg' },
-          { text: 'Use SICP only for kill calculations — ignore SIDPP', correct: false, why: 'Kill MW must be calculated from SIDPP, not SICP. SICP includes influx hydrostatic and is unreliable for kill weight calculation. You MUST establish true SIDPP.' },
-          { text: 'Open the choke and bleed until SICP = 0 then re-shut', correct: false, why: 'Bleeding SICP to zero destroys your BHP control completely — all back-pressure lost, massive influx possible. Never bleed to zero.' },
-          { text: 'Assume SIDPP = 0 and use 11.2 ppg kill mud', correct: false, why: 'If SIDPP truly were 0, the well would be balanced and no kill needed. Since SICP = 520 psi, underbalance exists. Using 11.2 ppg kill mud will not kill the well.' },
-        ]
-      },
-      {
-        prompt: 'True SIDPP established = 380 psi. Calculate KMW and comment on MAASP safety. (Shoe = 7,000 ft, LOT EMW = 14.6 ppg)',
-        options: [
-          { text: 'KMW = 11.97 ppg (~12.0 ppg). MAASP = 1185 psi — safe margin for kill operation', correct: true, why: 'KMW = 11.2 + (380÷492) = 11.97 → 12.0 ppg. MAASP = (14.6-12.0)×0.052×7000 = 946 psi. Need to check: max casing pressure during kill must stay below 946 psi. Current SICP = 520 — ample margin.', calc: 'KMW = 11.2 + (380 ÷ (0.052 × 9500))\n= 11.2 + (380 ÷ 494)\n= 11.2 + 0.769\n= 11.969 → 12.0 ppg\n\nMAAPS = (LOT EMW − KMW) × 0.052 × Shoe\n= (14.6 − 12.0) × 0.052 × 7000\n= 2.6 × 0.052 × 7000\n= 946.4 psi\n\nSICP at shut-in = 520 psi\nMargin = 946 - 520 = 426 psi — ADEQUATE' },
-          { text: 'KMW = 11.2 ppg — no change needed, SIDPP = 0 means balanced', correct: false, why: 'True SIDPP = 380 psi established by float valve pump test. Cannot use 0 psi SIDPP after confirming formation underbalance via SICP 520 psi.' },
-          { text: 'KMW = 12.8 ppg — add extra 0.8 ppg for safety', correct: false, why: 'Arbitrary safety margins risk fracturing the shoe. Use the formula exactly. The calculated 12.0 ppg already provides adequate overbalance.' },
-          { text: 'KMW = 11.97 ppg, MAASP = 2060 psi — ignore margin', correct: false, why: 'MAASP calculation is incorrect. (14.6-11.2)×0.052×7000 uses OMW instead of KMW. Must use KMW for the hydrostatic part of MAASP: (14.6-12.0)×0.052×7000 = 946 psi.' },
-        ]
+    function statusFor(name, idx) {
+      for (const [k, v] of statusByKeyword) {
+        if (name.includes(k)) return v;
       }
-    ]
-  },
+      return `Drilling ahead at ${30 + (idx % 25)} ft/hr with active kick surveillance`;
+    }
 
-  // ══════════════════════════════════════════════════
-  // 10. MAASP EXCEEDED — SHOE FRACTURE (HARD)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'maasp-exceeded',
-    name: 'MAASP Exceeded — Shoe Fracture Response',
-    difficulty: 'hard',
-    brief: {
-      depth: '12,000 ft TVD',
-      mw: '12.0 ppg',
-      formation: 'HP/HT Gas — SIDPP = 500 psi',
-      status: 'Driller\'s Method Circ 1 in progress',
-    },
-    objective: `Driller's Method Circ 1 in progress. MAASP = 850 psi. During circulation the <strong>casing pressure exceeds 850 psi and reaches 920 psi</strong>. Simultaneously, you notice <strong>pit volume starting to DROP</strong>. What has happened and what actions are required?`,
-    kickSize: 20, sidpp: 500, sicp: 920,
-    tvd: 12000, mwIn: 12.0, shoeDepth: 8500, lotEMW: 15.2, pumpRate: 40,
-    steps: [
-      {
-        prompt: 'SICP = 920 psi (MAASP = 850 psi exceeded) AND pit volume dropping. What has happened?',
-        options: [
-          { text: 'Shoe fracture — formation has fractured at casing shoe, mud is being lost into fracture (underground blowout potential)', correct: true, why: 'MAASP exceeded = shoe fractured. Pit volume dropping = mud going into the fracture. Now you have a SIMULTANEOUS kick and loss situation — the most dangerous well control scenario. Kick in annulus, losses at shoe, potential for underground blowout.', calc: 'Underground Blowout Risk Analysis:\nMAAPS exceeded → Shoe fractured\nPit dropping → Fluid lost to fracture\nKick still present → Formation still flowing\nRisk: Gas migrates to shallow weak zone\n      → Gas exits formation below shoe\n      → Potential underground blowout\n      → or cratering / surface intervention\nImmediate: REDUCE pump rate → lower ECD → stop losses' },
-          { text: 'Both gauges are malfunctioning simultaneously', correct: false, why: 'Both gauges malfunctioning at the same time with consistent physical evidence (pit drop, pressure rise) is extremely unlikely. Trust the gauges and physical evidence.' },
-          { text: 'The kick has been completely circulated out — normal pressure drop', correct: false, why: 'If kick were removed, casing pressure would DECREASE (less influx in annulus). Rising SICP above MAASP AND pit drops = shoe fracture, not successful kill.' },
-          { text: 'Gas is breaking out of solution in the riser', correct: false, why: 'Gas breakout in riser shows rapid casing pressure rise but would be accompanied by return INCREASE (gas expanding to surface), not pit DECREASE.' },
-        ]
-      },
-      {
-        prompt: 'Shoe fracture confirmed — losses and kick simultaneously. What is the IMMEDIATE action?',
-        options: [
-          { text: 'Reduce pump rate to minimum, close choke slightly to reduce annular ECD and stop losses, assess situation', correct: true, why: 'Reducing pump rate lowers ECD at the shoe, reducing losses. Slightly closing choke manages casing pressure. You need to balance: enough BHP to prevent more kick, but not so much that shoe keeps fracturing.', calc: 'Simultaneous Kick-Loss Management:\n1. REDUCE pump rate → lower ECD at shoe → reduce losses\n2. ADJUST choke → maintain BHP > pore pressure\n   but ECD < fracture pressure\n3. Consider: Reduce kill MW if possible (within tolerance)\n4. If total losses → Volumetric Method\n5. Target: Pit stable + SICP below MAASP\nThis is the "DYNAMIC KILL WINDOW":\n   BHP must be between pore pressure and fracture pressure\n   Very narrow window in this HP/HT well' },
-          { text: 'Increase pump rate to push more kill mud to bottom faster', correct: false, why: 'Increasing pump rate increases ECD at shoe — worsens the fracture and accelerates losses. The losses will increase faster than the kill progresses.' },
-          { text: 'Open choke fully to reduce casing pressure below MAASP immediately', correct: false, why: 'Opening choke reduces back-pressure on the annulus → reduces BHP below pore pressure → kick influx accelerates rapidly. This makes both problems worse simultaneously.' },
-          { text: 'Continue at same rate — the pressure will self-regulate', correct: false, why: 'With losses AND a kick, nothing self-regulates. Gas will migrate toward the fractured zone, exit at the shoe, and create an underground blowout. Immediate action is required.' },
-        ]
-      },
-      {
-        prompt: 'Losses continue despite reduced pump rate. Pit volume dropping 2 bbl/min. What next?',
-        options: [
-          { text: 'Shut in, consider Volumetric Method or bullhead kill, contact Well Control specialist immediately', correct: true, why: 'Total losses during a kill with a gas kick = one of the most dangerous well control situations. Shut in to stabilise. Use Volumetric Method to manage gas migration. Bullheading may be needed. This requires specialist well control expertise — contact them now.', calc: 'Escalation Required:\n✓ Shut in pump if total losses\n✓ Monitor SICP carefully (migrating gas)\n✓ Volumetric Method: bleed to control migration\n✓ Consider Lubricate & Bleed for gas near surface\n✓ Notify: Company Man, OIM, Well Control Specialist\n✓ Prepare for: Capping crew, relief well planning\n✓ Bullhead option: pump heavy mud down annulus\n   → may squeezes gas back into formation\n   → risk: further fracturing at shoe\nDocument everything for relief well if needed' },
-          { text: 'Add lost circulation material to seal the fracture and continue kill', correct: false, why: 'LCM requires time to mix and spot. With an active gas kick migrating toward the fractured zone, every minute matters. LCM will not save you fast enough here. Shut in and get specialist help.' },
-          { text: 'Weight up mud to 14 ppg to overpower the kick', correct: false, why: 'Heavier mud at 14 ppg in a well with MAASP at 850 psi would immediately fracture the shoe much worse (14 ppg × 0.052 × 12000 = 8736 psi BHP vs current fracture threshold). This is impossible.' },
-          { text: 'Open all BOPs and allow well to flow to surface — better than underground blowout', correct: false, why: 'An intentional surface blowout would be catastrophic — fire, explosion, H2S, loss of life, massive environmental damage. Never open BOPs to deliberately allow well flow. Underground blowouts, while serious, can still be managed.' },
-        ]
-      }
-    ]
-  },
+    function contextFor(topic, idx) {
+      const diffAdj = topic.difficulty === 'hard' ? 1.7 : topic.difficulty === 'medium' ? 0.9 : 0.2;
+      const tvd = 5000 + ((idx * 263) % 13000);
+      const mwIn = round(Math.min(18, 8.5 + ((idx * 17) % 52) / 10 + diffAdj), 1);
+      const sidpp = 180 + ((idx * 29 + 31) % 620);
+      const sicp = sidpp + 60 + ((idx * 11 + 17) % 180);
+      const shoeDepth = Math.min(tvd - 600, Math.round(tvd * (0.62 + (idx % 7) * 0.04)));
+      const pumpRate = 35 + ((idx * 5 + 7) % 45);
+      const scr = 520 + ((idx * 19 + 43) % 260);
+      const kickSize = 6 + ((idx * 3 + 5) % 26);
 
-  // ══════════════════════════════════════════════════
-  // 11. CASING & CEMENTING WELL CONTROL (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'casing-kick',
-    name: 'Well Control During Casing Running',
-    difficulty: 'medium',
-    brief: {
-      depth: '10,500 ft TVD',
-      mw: '11.8 ppg',
-      formation: 'Gas sand at 10,200 ft — pore pressure 11.5 ppg equiv.',
-      status: 'Running 9-5/8" casing — currently at 8,000 ft',
-    },
-    objective: `You are running 9-5/8" casing. The casing string is at 8,000 ft. Hole fill monitoring shows <strong>less fill than expected — 15 bbl deficit accumulating</strong>. Surge pressure from running casing is 0.4 ppg EMW. Flow check needed. BOP stack is still on the wellhead.`,
-    kickSize: 14, sidpp: 280, sicp: 390,
-    tvd: 10500, mwIn: 11.8, shoeDepth: 8000, lotEMW: 14.5, pumpRate: 0,
-    steps: [
-      {
-        prompt: 'Running casing: 15 bbl fill deficit developing. No BHA/drill pipe in hole — casing only. What is the risk?',
-        options: [
-          { text: 'Swabbing — running casing creates piston effect; reduced BHP has allowed formation influx', correct: true, why: 'Large-diameter casing has minimal annular clearance — swab pressure during running can be significant. The piston effect reduces BHP, allowing gas to enter. The 15 bbl deficit = formation fluid that has replaced mud that should have filled the hole.', calc: 'Casing Running Risk:\nCasing OD: 9-5/8" = large displacement\nAnnular clearance: minimal → high swab/surge ECD\nSurge EMW = 0.4 ppg → effective BHP increases\nSwab on pull = high risk when clearances small\n\nDisplacement per joint (example, 40ft joint):\nOpen end: volume of casing steel\nClosed end: volume of casing ID + steel\nFill required per joint must match displacement\n15 bbl deficit over run = significant swab kick' },
-          { text: 'Float valve failure — cement is back-flowing into the well', correct: false, why: 'No cement has been pumped yet — casing running is in progress. Float valves are used during cementing; they are not relevant at this stage. The issue is swabbing while running.' },
-          { text: 'Caliper discrepancy — the well is larger than planned', correct: false, why: 'Larger wellbore would cause MORE fill (more mud needed), not less. Less fill = fluid entering from formation.' },
-          { text: 'Casing string is blocking circulation — normal pressure build', correct: false, why: 'Casing blocking does not cause a fill deficit. The deficit is specific evidence of swabbing and formation fluid entry.' },
-        ]
-      },
-      {
-        prompt: 'You stop running casing at 8,000 ft. Flow check needed. How do you check for well flow with casing in the hole (no drill pipe)?',
-        options: [
-          { text: 'Watch for flow out of the top of the casing string or at the flow return — monitor for 5-10 minutes with no pump running', correct: true, why: 'With casing in the hole, monitor flow out of the casing top (if float sub not yet in) or watch return flow. Any flow with pump stopped = well flowing = shut in. Close pipe rams or annular BOP to shut in.', calc: 'Flow Check with Casing:\n1. Stop running casing — set weight on slips\n2. Check float sub — is casing open at bottom?\n3. Observe: flow from casing bore or annulus returns\n4. Watch trip tank (if available) for 5-10 mins\n5. If flow confirmed → SHUT IN\n   Close annular BOP or pipe rams (appropriate for casing OD)\n6. Record SIDPP (if instrument on casing) and SICP\n7. Notify Toolpusher, Company Man immediately' },
-          { text: 'Pump water down the casing and watch for flow — if no reverse flow, well is balanced', correct: false, why: 'Pumping and then looking for reverse flow is not the standard flow check method. Stop and observe — watch for flow with no pump input.' },
-          { text: 'Pull 5 joints of casing up to reduce BHP and confirm the kick', correct: false, why: 'Pulling casing up further swabs and lowers BHP — worsening any kick. Stop, observe, then shut in. Do not pull more casing.' },
-          { text: 'Continue running casing to bottom before doing a flow check', correct: false, why: '15 bbl deficit is already a significant kick indicator. Continuing to run casing continues the swabbing and grows the kick. Stop and flow check NOW.' },
-        ]
-      },
-      {
-        prompt: 'Flow confirmed. Well shut in on annular BOP. SICP = 390 psi. Casing not yet fully landed. What is the priority?',
-        options: [
-          { text: 'Stabilise well pressures, notify company man, assess options for killing well with casing in hole (strip to bottom or bullhead)', correct: true, why: 'With only casing (no drill pipe) in the hole, standard kill method is not possible — no kill path through drill string. Options: Strip casing to bottom (if near), then circulate. Or: Bullhead kill (pump kill mud down casing annulus). Contact specialist.', calc: 'Kill Options with Casing in Hole:\n\nOption 1 - Strip casing to bottom:\n  Land casing, circulate conventional kill\n  Problem: Need casing hanger and circulation path set up\n\nOption 2 - Bullhead Kill:\n  Pump heavy kill mud down ANNULUS via choke/kill line\n  Push influx back into formation under pressure\n  Risk: Fracturing shoe\n  Rate: Slow, controlled\n\nOption 3 - Call specialist well control\n  Any unusual kill requires expert input\n\nKMW = 11.8 + (280 ÷ (0.052 × 10500)) = 12.31 ppg' },
-          { text: 'Pull all casing out of hole and start from scratch with heavier mud', correct: false, why: 'Pulling casing with a live kick under the annular BOP is extremely risky. Stripping out under pressure with large OD casing and poor annular clearance risks BOP damage, tool joint failures. Not the first response.' },
-          { text: 'Open choke and circulate with 11.8 ppg mud through the casing', correct: false, why: 'With casing not at bottom, there is no path to circulate bottom up effectively. Circulating through a casing string not at TD would not address the influx at 10,200 ft.' },
-          { text: 'Close blind shear rams to seal off the well completely', correct: false, why: 'Closing blind shears would sever the casing string — you would lose the entire casing string and your only way into the well. Blind shears are a last resort only, never used with retrievable tubulars without extraordinary circumstances.' },
-        ]
-      }
-    ]
-  },
+      const kmwRaw = mwIn + (sidpp / (0.052 * tvd));
+      const kmw = ceil1(kmwRaw);
+      let lotEMW = round(kmw + 1.8 + ((idx * 7 + 3) % 16) / 10, 1);
+      if (lotEMW < kmw + 0.8) lotEMW = round(kmw + 0.8, 1);
+      if (lotEMW > 18.8) lotEMW = 18.8;
 
-  // ══════════════════════════════════════════════════
-  // 12. BOP EQUIPMENT — RAM SELECTION (EASY)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'bop-equipment',
-    name: 'BOP Equipment — Ram Selection & Function',
-    difficulty: 'easy',
-    brief: {
-      depth: 'Surface — Equipment Knowledge Test',
-      mw: 'N/A',
-      formation: 'BOP stack: Annular + 3 Ram BOPs',
-      status: 'Pre-operational equipment check',
-    },
-    objective: `You are conducting a pre-tour equipment check. The BOP stack from top to bottom has: <strong>Annular BOP, Upper Variable Bore Ram, Middle Pipe Ram, Lower Blind/Shear Ram</strong>. Answer questions about correct selection and use of each component.`,
-    kickSize: 0, sidpp: 0, sicp: 0,
-    tvd: 10000, mwIn: 11.0, shoeDepth: 7000, lotEMW: 14.5, pumpRate: 60,
-    steps: [
-      {
-        prompt: 'You need to shut in quickly with 5" drill pipe in the BOP. Which BOP component do you use FIRST?',
-        options: [
-          { text: 'Annular BOP — fastest to operate, seals around any pipe size', correct: true, why: 'Annular BOP seals around ANY pipe size, wireline, or even open hole. It is the first choice for rapid shut-in because it requires no pipe size matching and closes quickly. It is also less damaging to the pipe than rams.', calc: 'BOP Selection Hierarchy:\n1. ANNULAR BOP → Fast, seals any size, use first\n2. VARIABLE BORE RAM → Use after annular, more robust seal\n3. PIPE RAM → Fixed size, good seal but must match OD\n4. BLIND/SHEAR RAM → Last resort — severs pipe\n\nAnnular closing time: typically <30 seconds\nRam closing time: typically <30-45 seconds\nBoth operated from: Remote BOP panel at driller\nor directly from accumulator unit (Koomey unit)' },
-          { text: 'Blind/shear ram — strongest seal, most reliable', correct: false, why: 'Blind/shear rams SEVER the drill pipe. Using them with 5" drill pipe in the hole destroys the string and loses your kill path. They are ONLY for: last resort when all other BOPs fail, or emergency disconnect.' },
-          { text: 'Pipe ram — more positive seal than annular', correct: false, why: 'Pipe ram is a valid choice but must match the exact pipe OD (5" pipe needs 5" pipe ram). Annular is faster to operate and universal. In practice, close annular first, then backup with pipe rams.' },
-          { text: 'All BOPs simultaneously — maximum sealing redundancy', correct: false, why: 'Closing ALL BOPs simultaneously can cause equipment damage and removes flexibility for subsequent operations (strip operations, etc.). Follow the sequence: annular first, then rams as needed.' },
-        ]
-      },
-      {
-        prompt: 'During a kick, the drill string has a NON-SEALABLE tool joint (larger than pipe ram capacity) positioned in the ram BOP. What do you do?',
-        options: [
-          { text: 'Space out the drill string to move the tool joint ABOVE the BOP before closing pipe ram', correct: true, why: 'Before closing BOPs, space out to ensure a sealable pipe section is in the ram BOP. This is why "space out" is in the shut-in procedure. Never try to close a ram BOP on a tool joint — it will not seal and will damage the BOP.', calc: 'Space Out Procedure:\n1. Tool joint in BOP? → Cannot seal!\n2. Pick up or lower string to move tool joint\n   ABOVE annular BOP or BELOW all BOPs\n3. Position: plain pipe body in ram BOP\n4. Then close annular first (seals tool joints too)\n   Then close pipe ram on pipe body\n5. Pre-job: Calculate space-out positions\n   Know: Tool joint spacing in your BHA\n   Know: BOP stack height for each component' },
-          { text: 'Close the blind shear rams — they can cut anything', correct: false, why: 'Blind/shear rams are a last resort — they destroy the drill string. If you can space out, do so. Destroying the string when you could simply move it up/down is unnecessary and costly.' },
-          { text: 'Close annular BOP only — it seals around tool joints', correct: true, why: 'Also valid! The annular BOP can seal around tool joints. So while spacing out is ideal for pipe ram use, the annular provides immediate sealing around the tool joint as a first response.', calc: 'Annular BOP Advantage:\nCan seal around: pipe body, tool joints, wireline, even open hole\nPressure assist: wellbore pressure helps close the packer element\nLimitation: Not as robust as rams under high pressure\nUsage: Close annular immediately, then space out for rams' },
-          { text: 'Continue drilling — tool joint will pass through as you drill ahead', correct: false, why: 'With a kick in progress, you cannot continue drilling. Immediate shut-in is required. Deal with the tool joint location as part of the shut-in procedure.' },
-        ]
-      },
-      {
-        prompt: 'Accumulator pressure drops to 2,000 psi during BOP operation. Minimum operating pressure is 1,500 psi. What does this mean?',
-        options: [
-          { text: 'Accumulator is being depleted — monitor closely, start backup pump, do not open/close more functions than necessary', correct: true, why: 'Accumulator stores hydraulic fluid under pressure to operate BOPs. At 2,000 psi (minimum 1,500 psi), you have limited reserve. Each BOP function uses pressure. Start the air/electric backup pump immediately to recharge. Avoid unnecessary BOP operations to conserve fluid.', calc: 'Accumulator Pressure Management:\nDesign requirement (API STD 53):\n  Must close one annular BOP + one set of rams\n  + open choke/kill valves from 3,000 psi\n  → All without replenishment, end above 1,200 psi\n\nAt 2,000 psi:\n  1. Start backup accumulator pump immediately\n  2. Monitor recharge rate\n  3. Limit non-essential BOP operations\n  4. Ensure: manual/hydraulic lockout of operated BOPs\n  5. If below 1,500 psi: emergency backup (nitrogen, manual)' },
-          { text: 'Accumulator failure — evacuate rig, all BOPs are inoperable', correct: false, why: 'Accumulator at 2,000 psi is still functional (minimum 1,500 psi). BOPs already closed remain closed. Backup pumps can recharge. Not an evacuation situation — it is a precautionary situation.' },
-          { text: 'Normal operational range — no concern', correct: false, why: '2,000 psi is close to minimum operational threshold. It is NOT normal during active BOP operations. Standard operating pressure is 3,000 psi. At 2,000 you have limited reserve — immediate backup pump activation is required.' },
-          { text: 'Open all BOPs to reset system and re-pressurise', correct: false, why: 'Opening BOPs with a live well would allow the kick to flow. NEVER open BOPs to reset the accumulator. Recharge with backup pumps while BOPs remain closed.' },
-        ]
-      }
-    ]
-  },
+      const icp = Math.round(scr + sidpp);
+      const fcp = Math.round(scr * (kmw / mwIn));
+      const maasp = Math.round((lotEMW - kmw) * 0.052 * shoeDepth);
+      const hydro = Math.round(mwIn * 0.052 * tvd);
+      const bhp = hydro + sidpp;
+      const emw = round(bhp / (0.052 * tvd), 2);
 
-  // ══════════════════════════════════════════════════
-  // 13. DRILLER'S METHOD vs WAIT & WEIGHT (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'method-selection',
-    name: "Driller's vs Wait & Weight — Method Selection",
-    difficulty: 'medium',
-    brief: {
-      depth: '11,000 ft TVD',
-      mw: '11.5 ppg',
-      formation: 'Gas — SIDPP = 450 psi, SICP = 700 psi',
-      status: 'Well shut in — selecting kill method',
-    },
-    objective: `Well is shut in. <strong>SIDPP = 450 psi, SICP = 700 psi</strong>. Kick volume = 25 bbl. MAASP = 960 psi. Weighting material available for Wait & Weight. Assess both methods and make the correct decision for this scenario.`,
-    kickSize: 25, sidpp: 450, sicp: 700,
-    tvd: 11000, mwIn: 11.5, shoeDepth: 7500, lotEMW: 14.8, pumpRate: 40,
-    steps: [
-      {
-        prompt: "Compare Driller's Method and Wait & Weight. What is the main advantage of Wait & Weight here?",
-        options: [
-          { text: "Wait & Weight achieves kill in ONE circulation and results in LOWER peak casing shoe pressure", correct: true, why: "Wait & Weight uses kill mud immediately — single circulation. The heavier kill mud provides more hydrostatic throughout the annulus, resulting in LOWER peak casing pressure at the shoe compared to Driller's Method Circ 1 (which uses original light mud). With MAASP = 960 psi and SICP already 700 psi, saving shoe pressure matters.", calc: "Method Comparison:\nDriller's Method:\n  Circ 1: Original mud (11.5 ppg) — lighter mud\n  Peak shoe pressure HIGHER (lighter mud in annulus)\n  Two full circulations required\n  Can start sooner (no wait for weighting)\n\nWait & Weight:\n  Single circulation with kill mud (12.29 ppg)\n  Peak shoe pressure LOWER (heavier mud provides more hydrostatic)\n  Must weight mud first (time delay)\n  Better when MAASP margin is tight\n\nKMW = 11.5 + (450÷(0.052×11000)) = 11.5 + 0.79 = 12.29 ppg\nMAAPS = (14.8-12.29)×0.052×7500 = 979 psi\nSICP = 700 psi → margin = 279 psi — use W&W for lower shoe pressure" },
-          { text: "Driller's Method is better — simpler and can start without waiting for weighting", correct: false, why: "While Driller's Method starts faster, with 700 psi SICP and only 260 psi MAASP margin, the higher shoe pressure during Circ 1 (using original light mud) could push SICP above MAASP. Wait & Weight is safer here." },
-          { text: "Both methods produce identical casing shoe pressures — choice is arbitrary", correct: false, why: "The two methods produce DIFFERENT shoe pressures. Driller's Method Circ 1 with original-weight mud gives higher peak shoe pressure. Wait & Weight uses kill mud throughout, giving lower peak shoe pressure. Never assume they are equivalent." },
-          { text: "Driller's Method is safer because it does not increase mud weight", correct: false, why: "Both methods ultimately use kill mud. Driller's Method Circ 1 uses original mud — this is not inherently safer. The safety comparison is about peak shoe pressure, and Wait & Weight wins on that criterion when MAASP margin is tight." },
-        ]
-      },
-      {
-        prompt: "You choose Wait & Weight. KMW = 12.3 ppg. Mixing takes 45 minutes. During the wait, SICP is rising (gas migration). What do you do?",
-        options: [
-          { text: "Apply Volumetric Method during the wait — bleed fluid to control migration and maintain BHP", correct: true, why: "If gas migrates while waiting to weight up, you MUST manage it with the Volumetric Method (controlled bleeding). Otherwise SICP will exceed MAASP before kill mud is ready. This does NOT delay Wait & Weight — it manages the well safely during the waiting period.", calc: "During Wait Phase - Volumetric Management:\nSICP rising at: 4 psi/min = 240 psi/hr\nMAAPs margin: 960 - 700 = 260 psi\nTime before MAASP hit: 260 ÷ 4 = 65 min\nMix time: 45 min → CLOSE call — manage migration!\n\nVolumetric Bleed Calculation (example):\nBled when SICP rises 50 psi above safety margin\nBleed volume = 50 ÷ (0.052 × 12.3) × annulus cap/ft\nApprox = 50 ÷ 0.64 ÷ (1/0.05) ≈ 4 bbl per bleed cycle" },
-          { text: "Wait without action — 45 minutes is short enough", correct: false, why: "Gas migrating at 4 psi/min will hit MAASP in ~65 minutes. With 45 minutes to mix, there is insufficient margin. Active management with Volumetric Method is required." },
-          { text: "Switch to Driller's Method instead — start circulating immediately with original mud", correct: false, why: "Switching methods mid-preparation is possible but not necessarily the best call. If you switch to Driller's Method with 700 psi SICP and light mud, you risk exceeding MAASP during Circ 1. The Volumetric Method during the wait is safer." },
-          { text: "Open choke fully to bleed gas to surface quickly", correct: false, why: "Opening choke fully drops BHP dramatically, causing rapid influx acceleration. Bleed must be CONTROLLED and CALCULATED via Volumetric Method, not open choke." },
-        ]
-      },
-      {
-        prompt: "Kill mud is ready. Starting Wait & Weight. ICP = 40 SPM SCR + SIDPP. SCR at 40 spm = 650 psi. ICP = ?",
-        options: [
-          { text: "ICP = 1100 psi (650 + 450 = 1100 psi)", correct: true, why: "ICP = SCR pressure + SIDPP = 650 + 450 = 1100 psi. This is the drill pipe pressure you hold when you first start the pump. As kill mud descends, DP pressure drops from 1100 toward FCP.", calc: "ICP Calculation:\nICP = SCR + SIDPP\n= 650 + 450\n= 1100 psi\n\nFCP = SCR × (KMW ÷ OMW)\n= 650 × (12.3 ÷ 11.5)\n= 650 × 1.0696\n= 695 psi\n\nDP Pressure Schedule:\n  Start: 1100 psi (kill mud at surface)\n  End: 695 psi (kill mud at bit)\n  Drop per stroke = (1100-695) ÷ strokes to bit" },
-          { text: "ICP = 650 psi — just hold SCR pressure", correct: false, why: "SCR alone does not account for the underbalance (SIDPP = 450 psi). Holding only 650 psi underbalances the well by 450 psi at startup — more influx enters." },
-          { text: "ICP = 450 psi — just hold SIDPP", correct: false, why: "SIDPP without friction pressure (SCR) means you cannot circulate at all — the pump would stall. ICP must include both formation underbalance AND friction to circulate." },
-          { text: "ICP = 700 psi — hold the SICP value on the DP gauge", correct: false, why: "SICP (700 psi) is the ANNULUS pressure. ICP is for the DRILL PIPE. Using SICP on the DP gauge would over-pressurize the drill string and does not correspond to correct BHP calculation." },
-        ]
-      }
-    ]
-  },
+      const holeDia = round(8.5 + (idx % 9) * 0.25, 2);
+      const dpOd = round(4.5 + (idx % 4) * 0.5, 2);
+      const annCap = round((holeDia * holeDia - dpOd * dpOd) / 1029.4, 4);
+      const pumpOutput = round(0.09 + (idx % 8) * 0.005, 3);
+      const stringVol = 90 + ((idx * 13 + 9) % 90);
+      const annVol = 220 + ((idx * 17 + 13) % 220);
+      const strokesToBit = Math.round(stringVol / pumpOutput);
+      const dropPerStroke = round((icp - fcp) / strokesToBit, 3);
 
-  // ══════════════════════════════════════════════════
-  // 14. BLOWOUT PREVENTION — CRITICAL DECISION (HARD)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'blowout-risk',
-    name: 'Critical Emergency — Drill String Washout During Kill',
-    difficulty: 'hard',
-    brief: {
-      depth: '11,500 ft TVD',
-      mw: '11.2 ppg',
-      formation: 'HP/HT Reservoir — Pore Pressure 12.1 ppg',
-      status: "Driller's Method Circ 1 in progress",
-    },
-    objective: `Driller's Method Circ 1 in progress. Casing pressure = 780 psi (MAASP = 820 psi). Suddenly <strong>standpipe pressure drops 400 psi and pit volume starts increasing rapidly</strong>. Multiple alarms active. This is a CRITICAL emergency.`,
-    kickSize: 25, sidpp: 480, sicp: 780,
-    tvd: 11500, mwIn: 11.2, shoeDepth: 8000, lotEMW: 14.5, pumpRate: 45,
-    steps: [
-      {
-        prompt: 'During kill: SPP drops 400 psi suddenly, pit gain accelerating. What happened?',
-        options: [
-          { text: 'Drill string washout — pressure loss through hole in pipe, BHP reduced, formation accelerating', correct: true, why: 'Sudden large SPP DROP with no pump rate change = drill string washout. Mud bypasses through the hole, reducing ECD at bit. Formation sees reduced BHP and flows faster. Emergency situation.', calc: 'Washout Signature:\n  ✗ SPP drops suddenly (400 psi = major washout)\n  ✗ Pit gain increases (BHP insufficient)\n  ✗ Flow out > pump in\n\nImmediate Risk:\n  BHP < pore pressure → influx accelerating\n  SICP approaching MAASP (780 vs 820 psi)\n  MAASP margin: only 40 psi!\n  Time to MAASP (at 5 psi/min rate): ~8 minutes\n  CRITICAL EMERGENCY' },
-          { text: 'Pump failure — one cylinder failed, reducing output', correct: false, why: 'Pump cylinder failure causes 15-25% pressure drop, not 400 psi. And pump failure alone would not accelerate pit gain.' },
-          { text: 'Bit plugged — restriction reducing pump efficiency', correct: false, why: 'Bit plug INCREASES pump pressure (more restriction). A DECREASE means loss of restriction — the opposite of plugging.' },
-          { text: 'Shoe fracture — mud being lost to formation', correct: false, why: 'Shoe fracture shows DECREASING pit (mud going out) not INCREASING pit (formation fluid coming in). You have inflow, not losses.' },
-        ]
-      },
-      {
-        prompt: 'SICP = 790 psi, MAASP = 820 psi (only 30 psi margin). Washout confirmed. Immediate action?',
-        options: [
-          { text: 'STOP pump, close PIPE RAMS immediately to secure well, record pressures, notify Company Man', correct: true, why: 'With washout during kill and only 30 psi MAASP margin — STOP PUMP and CLOSE PIPE RAMS immediately. Pipe rams give a more reliable seal than annular under high differential pressure. Secure well, assess. Every second pumping with a washout worsens the situation.', calc: 'Emergency Shut-In:\n1. STOP PUMP immediately\n2. Close PIPE RAMS (more reliable than annular at 790 psi)\n3. Monitor: SICP should stabilise ≤820 psi\n4. Record: SIDPP=?, SICP=790 psi\n5. Call: Company Man + Well Control specialist NOW\n6. Options assessment:\n   a) Bullhead kill (pump down annulus)\n   b) Strip new string and re-establish kill\n   c) Relief well (if all else fails)\nKey: Do NOT wait — 30 psi margin can be gone in minutes' },
-          { text: 'Increase pump rate to compensate for washout and maintain BHP', correct: false, why: 'More pump rate with a washout = more mud past the hole, not through the bit = still inadequate BHP AND more stress on the already-damaged pipe AND SICP rises above MAASP.' },
-          { text: 'Open choke fully to immediately drop SICP below MAASP', correct: false, why: 'Opening choke DROPS back-pressure → DROPS BHP below pore pressure → influx ACCELERATES catastrophically. SICP drops temporarily but influx grows massively.' },
-          { text: 'Continue kill — may resolve on its own', correct: false, why: 'A washout during a kill NEVER resolves on its own. Every minute continuing = more influx + washout getting larger. Secure well immediately.' },
-        ]
-      },
-      {
-        prompt: 'Well secured on pipe rams. SICP stabilises at 795 psi. Drill string is washed out — cannot circulate through it. Next step?',
-        options: [
-          { text: 'Bullhead kill — pump heavy mud (12.0 ppg) down the ANNULUS via choke/kill line at controlled rate', correct: true, why: 'With washed out string, standard kill methods are not possible. Bullheading pumps kill mud down the annulus to push the influx back into the formation. Slow, controlled rate to avoid fracturing the shoe. Company Man and Well Control specialist must be involved.', calc: 'Bullhead Kill Procedure:\nKMW = 11.2 + (480÷(0.052×11500)) = 12.0 ppg\n\nPump Down: Kill line / choke line → Annulus\nTarget: Push gas influx back into formation\nRate: SLOW — monitor treating pressure < MAASP\nMAAPS = (14.5-12.0)×0.052×8000 = 1040 psi\nMax surface pressure during bullhead: < 1040 psi\nVolume: pump 110% annulus volume to ensure displacement\n\nRisk: Shoe fracture → underground blowout\nMonitor: Surface treating pressure at all times\nIf unsuccessful: Relief well planning required' },
-          { text: 'Open all BOPs to blow well to surface — better than blowout underground', correct: false, why: 'Intentional surface blowout: explosion, H2S, fire, loss of life. NEVER an option. Underground management with specialist intervention is the path.' },
-          { text: 'Wait for the formation to equalize naturally', correct: false, why: 'HP/HT formations do not self-equalize. With 12.1 ppg pore pressure vs 11.2 ppg mud, the well will keep flowing until mechanically controlled.' },
-          { text: 'Strip new drill pipe back to bottom past the washout point', correct: false, why: 'Stripping new pipe with 795 psi SICP (30 psi below MAASP) is technically possible but extremely complex and risky. Bullheading is more direct for this scenario.' },
-        ]
-      }
-    ]
-  },
+      const influxKinds = [
+        { name: 'gas', gradient: '0.05-0.15 psi/ft' },
+        { name: 'oil', gradient: '0.30-0.35 psi/ft' },
+        { name: 'water', gradient: '0.43-0.46 psi/ft' }
+      ];
+      const influx = influxKinds[idx % 3];
+      const pitGain = Math.max(2, Math.round(kickSize * 0.4));
+      const fac = facets(topic.name);
 
-  // ══════════════════════════════════════════════════
-  // 15. WELL CONTROL MANAGEMENT — DRILLS & PROCEDURES (EASY)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'well-control-management',
-    name: 'Well Control Management — Drills & Procedures',
-    difficulty: 'easy',
-    brief: {
-      depth: 'Rig floor — Pre-operational',
-      mw: '10.5 ppg',
-      formation: 'Drilling programme in progress',
-      status: 'Supervisor reviewing well control readiness',
-    },
-    objective: `As the Equipment Operator (Level 3), you are responsible for executing well control procedures correctly. This scenario tests your knowledge of <strong>well control drills, responsibilities, and Management of Change procedures</strong> as per IWCF Level 3 requirements.`,
-    kickSize: 5, sidpp: 200, sicp: 280,
-    tvd: 8000, mwIn: 10.5, shoeDepth: 6000, lotEMW: 14.0, pumpRate: 55,
-    steps: [
-      {
-        prompt: 'How often should a KICK DRILL (pit drill / BOP drill) be conducted on a drilling rig?',
-        options: [
-          { text: 'Minimum every 7 days (weekly) per API/IADC requirements, with documented records', correct: true, why: 'API standards and IWCF recommend weekly well control drills (minimum). Each drill must be: timed, documented, reviewed for deficiencies, and records maintained. Frequency ensures crew competency is maintained — not just achieved.', calc: 'IWCF/API Drill Requirements:\nPit Drill: Every 7 days (weekly minimum)\nBOP Drill: Every 7 days\nChoke Drill: Regular practice\nStrip Drill: Regular for applicable operations\nDiverter Drill: Before top hole operations\n\nDocumentation Required:\n  → Drill type and date\n  → Time to complete (compare to target)\n  → Personnel present\n  → Deficiencies noted\n  → Corrective actions taken\n  → Supervisor signature' },
-          { text: 'Only when a new crew joins the rig — one-time orientation drill', correct: false, why: 'One-time orientation is insufficient. Well control competency requires regular reinforcement. Weekly drills maintain muscle memory and identify equipment problems before they become emergencies.' },
-          { text: 'Monthly — more frequent would disrupt normal operations', correct: false, why: 'Monthly is not frequent enough. Well control emergencies happen without warning. Weekly drills ensure the crew can respond within required response times (typically BOP closed within 2-3 minutes of kick detection).' },
-          { text: 'Only when a near-miss occurs — as corrective action', correct: false, why: 'Reactive drilling (after near-miss) is too late. Well control drills are PREVENTIVE — they build competency before an emergency occurs. Waiting for near-misses creates catastrophic risk.' },
-        ]
-      },
-      {
-        prompt: 'The Driller wants to change the shut-in procedure during an operation. What MUST happen first?',
-        options: [
-          { text: 'A formal Management of Change (MOC) review — assess risk, get supervisor/operator approval, document the change before implementing', correct: true, why: 'ANY change to a well control procedure REQUIRES a formal MOC process. The potential risk of well control procedure changes is critical (Importance Level 5-10). MOC ensures: change is necessary, risk is assessed, approved by appropriate authority, documented, and all crew briefed.', calc: 'MOC Process for Well Control Procedures:\n1. Identify: What is changing?\n2. Why: Is this change necessary?\n3. Risk Assessment: What could go wrong?\n4. Approval: Company Man + Toolpusher at minimum\n5. Communication: Brief ALL crew on the new procedure\n6. Documentation: Written change record\n7. Implementation: Only after full sign-off\n8. Review: Is the change effective?\n\nNever: Verbal ad-hoc changes to well control procedures' },
-          { text: 'Just tell the crew at the morning safety meeting — verbal is sufficient', correct: false, why: 'Well control procedure changes cannot be managed by verbal communication alone. Formal documentation is required. Verbal-only changes are a major safety violation — crews on other shifts may not receive the update.' },
-          { text: 'Try the new procedure once and review after — empirical testing', correct: false, why: 'Testing untested well control procedures on a live well is extremely dangerous. Changes must be risk-assessed and approved BEFORE implementation, not tested empirically.' },
-          { text: 'No approval needed — the Driller has authority on his own well control procedures', correct: false, why: "The Driller does not have unilateral authority to change well control procedures. These are governed by the operator's drilling programme and regulatory requirements. Changes require management approval." },
-        ]
-      },
-      {
-        prompt: 'You are about to start a critical well operation. What is the most important pre-job check?',
-        options: [
-          { text: 'Verify all well control equipment is tested, functional, and correctly lined up — BOP, choke manifold, SCR pressures recorded', correct: true, why: 'Pre-job well control checks ensure that if an emergency occurs, all equipment is operational. This includes: BOP tested and functional, slow circulating rate (SCR) pressures recorded and current, choke manifold correctly lined up, pit volume baseline established, and kill sheet pre-tour calculations completed.', calc: 'Pre-job Well Control Checklist:\n✓ BOP function test (last test within 14 days)\n✓ Accumulator pressure > 3,000 psi\n✓ SCR (slow circ rate) pressures taken and recorded\n✓ Choke manifold: correct line-up, choke functional\n✓ Pit baseline volume recorded\n✓ Trip tank functional\n✓ Kill sheet (pre-tour) completed with current data\n✓ Non-shearables identified and noted\n✓ MAASP calculated and posted\n✓ Shut-in procedures posted and understood by crew' },
-          { text: 'Check the weather forecast — wind direction affects emergency response', correct: false, why: 'While weather matters for evacuation planning, it is not the MOST important pre-job well control check. Equipment functionality and readiness are the priority.' },
-          { text: 'Confirm mud supply is adequate for full operation', correct: false, why: 'Mud supply is important for operations, but well control equipment readiness (BOP, choke, accumulator, SCR) is specifically the well control pre-job priority.' },
-          { text: 'File the job card with the operator — administrative compliance first', correct: false, why: 'Administrative compliance is necessary but not the FIRST priority before a well operation. Physical equipment verification must be confirmed before operations begin.' },
-        ]
-      }
-    ]
-  },
+      return {
+        ...topic,
+        idx,
+        tvd,
+        mwIn,
+        sidpp,
+        sicp,
+        shoeDepth,
+        pumpRate,
+        scr,
+        kickSize,
+        kmwRaw,
+        kmw,
+        lotEMW,
+        icp,
+        fcp,
+        maasp,
+        hydro,
+        bhp,
+        emw,
+        holeDia,
+        dpOd,
+        annCap,
+        pumpOutput,
+        stringVol,
+        annVol,
+        strokesToBit,
+        dropPerStroke,
+        influx,
+        pitGain,
+        fac,
+        status: statusFor(topic.name, idx)
+      };
+    }
 
-  // ══════════════════════════════════════════════════
-  // 16. BARRIER MANAGEMENT (MEDIUM)
-  // ══════════════════════════════════════════════════
-  {
-    id: 'barriers',
-    name: 'Barrier Concept & Well Barrier Management',
-    difficulty: 'medium',
-    brief: {
-      depth: '9,800 ft TVD',
-      mw: '11.0 ppg',
-      formation: 'Gas/condensate reservoir — pore pressure 11.3 ppg',
-      status: 'Drilling ahead — barrier review in progress',
-    },
-    objective: `The well is drilling ahead with 11.0 ppg mud in a formation with 11.3 ppg equivalent pore pressure. There is <strong>1.0 ppg trip margin applied</strong>. Understand the barrier envelope and identify the consequences of each barrier element failing.`,
-    kickSize: 6, sidpp: 170, sicp: 240,
-    tvd: 9800, mwIn: 11.0, shoeDepth: 6500, lotEMW: 14.8, pumpRate: 58,
-    steps: [
-      {
-        prompt: 'While drilling with 11.0 ppg mud against 11.3 ppg formation pressure, what are the TWO well barriers?',
-        options: [
-          { text: 'Primary barrier: Drilling fluid hydrostatic pressure (11.0 ppg mud column). Secondary barrier: Closed BOP stack and associated well control equipment.', correct: true, why: 'Two barriers are ALWAYS required during drilling. Primary = drilling fluid providing overbalance (or in this case slight underbalance managed by trip margin planning). Secondary = BOP system. If primary fails (kick), secondary activates (shut in BOP).', calc: 'Well Barrier Envelope:\nPrimary Barrier = Drilling Fluid\n  Hydrostatic = 11.0 × 0.052 × 9800 = 5605.6 psi\n  Pore Pressure = 11.3 × 0.052 × 9800 = 5757.7 psi\n  Status: SLIGHTLY UNDERBALANCED (152 psi)\n  With trip margin 1.0 ppg: Balanced while drilling\n\nSecondary Barrier = BOP System\n  Annular BOP: Functional, tested\n  Pipe Rams: Functional, correct size\n  Blind/Shear Rams: Last resort\n  Choke/Kill manifold: Lined up and ready\n  BOP Control (Koomey unit): Charged and functional' },
-          { text: 'Primary barrier: BOP stack. Secondary barrier: Mud weight.', correct: false, why: 'The hierarchy is reversed. The drilling fluid (primary) should prevent kicks from occurring. The BOP (secondary) is only activated when the primary barrier fails. BOP is never the first line of defence during active drilling.' },
-          { text: 'There is only one barrier — the drilling fluid', correct: false, why: 'TWO barriers are ALWAYS required per IWCF/WELL BARRIER philosophy. NEVER operate with only one barrier — if it fails, you have nothing. The BOP must ALWAYS be functional as the secondary barrier.' },
-          { text: 'Primary: Casing cement. Secondary: Annular BOP.', correct: false, why: 'Cement is a barrier element but not the "primary" drilling barrier. During active drilling, the primary barrier is the drilling fluid hydrostatic pressure. Cement is the primary barrier when the string is NOT in the hole (behind casing).' },
-        ]
-      },
-      {
-        prompt: 'The mud weight is diluted accidentally to 10.6 ppg (below pore pressure equivalent of 11.3 ppg). Which barrier has been compromised and what is the IMMEDIATE action?',
-        options: [
-          { text: 'Primary barrier (drilling fluid) compromised. Immediate action: Stop drilling, pump slug, prepare to shut in, weight up mud to restore primary barrier.', correct: true, why: 'Dilution below pore pressure = primary barrier failed. Immediate actions: stop drilling, identify the dilution source, weight up mud as fast as possible. If well starts to flow while weighting — perform flow check and shut in. Secondary barrier (BOP) must remain ready.', calc: 'Primary Barrier Failure Analysis:\n10.6 ppg hydrostatic at 9800 ft:\n= 10.6 × 0.052 × 9800 = 5396 psi\nPore pressure = 11.3 × 0.052 × 9800 = 5758 psi\nUnderbalance = 5758 - 5396 = 362 psi\nKick risk: HIGH\n\nImmediate Actions:\n1. Stop drilling\n2. Identify dilution source\n3. Weight up: KMW for underbalance\n   Weighting rate: typical 0.1-0.3 ppg/hr\n4. Monitor: pit volume, flow returns\n5. If flow detected: SHUT IN immediately\n6. Secondary barrier (BOP) already in place' },
-          { text: 'Secondary barrier (BOP) compromised. Activate primary barrier immediately.', correct: false, why: 'The BOP is the secondary barrier — it has not been affected by mud dilution. The PRIMARY barrier (mud weight) has been compromised. Keep the BOP ready (secondary) while restoring the primary barrier.' },
-          { text: 'No barrier compromised — 10.6 ppg is close enough to 11.0 ppg', correct: false, why: '10.6 ppg is BELOW the pore pressure equivalent (11.3 ppg). The well is underbalanced. This is a genuine primary barrier failure — influx risk is immediate.' },
-          { text: 'Add water to dilute further and restart with clean fluid calculations', correct: false, why: 'Further dilution makes the underbalance WORSE. You must ADD weighting material (barite), not more water.' },
-        ]
-      },
-      {
-        prompt: 'While verifying the BOP (secondary barrier), the annular BOP fails a function test. Mud weight is currently balanced. What are the regulations?',
-        options: [
-          { text: 'Stop operations — with secondary barrier failed, you have only ONE barrier. Cannot continue drilling until BOP is repaired/replaced.', correct: true, why: 'IWCF and regulatory requirements mandate TWO barriers at all times. If BOP fails function test, secondary barrier is compromised. You cannot drill with only primary barrier. Stop operations, repair BOP, re-test, then resume. This is non-negotiable.', calc: 'Two Barrier Requirement:\nIf only ONE barrier available: STOP OPERATIONS\n\nActions when secondary barrier fails:\n1. STOP all well penetration activities\n2. Establish safe static well condition\n3. Notify: Company Man, Operator, Toolpusher\n4. Assess: Can BOP be repaired with string in hole?\n5. Repair or replace failed BOP component\n6. Re-function test to confirm fix\n7. Document: failure, cause, repair, re-test\n8. Get approval before resuming drilling\n9. Regulatory notification may be required' },
-          { text: 'Continue drilling carefully — mud weight is balanced so primary barrier is strong', correct: false, why: 'Never drill with only one barrier, regardless of how strong it is. Mud weight can be lost suddenly (lost circulation, dilution, gas cut). You need the BOP as backup — always.' },
-          { text: 'Use the pipe rams as secondary barrier instead of the annular', correct: false, why: 'Pipe rams can serve as secondary barrier if they function correctly — BUT only if they have been function tested successfully. An untested/failed BOP system does not count as a verified secondary barrier.' },
-          { text: 'The annular only needs to pass pressure test, not function test', correct: false, why: 'Both pressure test AND function test are required per API standards. Function test verifies operation (opens and closes); pressure test verifies sealing ability. Both are required for a barrier to be considered verified.' },
-        ]
+    function buildSteps(c) {
+      const wrongSideppAsSicp = {
+        text: `${Math.round(c.mwIn + (c.sicp / (0.052 * c.tvd)) * 10) / 10} ppg`,
+        why: 'This uses SICP in the kill mud equation. IWCF kill-weight calculations must use SIDPP, because SIDPP represents bottom underbalance without annular influx hydrostatic distortion.'
+      };
+
+      const steps = [
+        q(
+          `Pit volume increases by ${c.pitGain} bbl while drilling at constant flow rate. What is the primary interpretation?`,
+          'Treat as a kick indicator and perform stop-flow-check-shut-in sequence without delay.',
+          'Pit gain while drilling at steady pumps is a primary kick indicator in IWCF procedures. The correct response is to stop pumps, verify flow, and shut in if flow persists.',
+          [
+            { text: 'Ignore the gain until at least 10 bbl accumulates.', why: 'Waiting for larger gains is a common trap. Early shut-in limits kick size and reduces MAASP risk.' },
+            { text: 'Increase pump rate to stabilize return flow first.', why: 'Increasing pump rate masks kick evidence and can raise ECD, increasing fracture risk.' },
+            { text: 'Continue drilling and check again after one stand.', why: 'Continuing penetration with kick indicators can rapidly increase influx volume.' }
+          ]
+        ),
+        q(
+          'With pumps off, flow continues at the flowline. Which statement is correct?',
+          'This is a confirmed kick; close in using the approved shut-in procedure.',
+          'Flow with pumps off is a definitive primary kick indicator. IWCF expects immediate shut-in after confirmation.',
+          [
+            { text: 'This is normal thermal expansion and can be ignored.', why: 'Thermal expansion does not produce sustained return flow at the flowline under static conditions.' },
+            { text: 'Restart pumps to see if flow-out normalizes before deciding.', why: 'Restarting delays shut-in and can enlarge the influx.' },
+            { text: 'Only shut in if standpipe pressure also rises.', why: 'Standpipe behavior is secondary; continued static flow is enough to confirm a kick.' }
+          ]
+        ),
+        q(
+          'Which secondary indicator best supports the kick diagnosis in this scenario?',
+          'A simultaneous increase in gas units and drilling break.',
+          'Gas increase with drilling break is a classic secondary warning of entering an overpressured zone.',
+          [
+            { text: 'Steady pit level with constant ROP.', why: 'Steady pit and ROP do not support kick diagnosis.' },
+            { text: 'Decreasing torque during connection time only.', why: 'Torque changes alone are not reliable kick confirmation.' },
+            { text: 'Lower mud temperature at shakers.', why: 'Mud temperature variation is not a standard secondary kick indicator.' }
+          ]
+        ),
+        q(
+          'Select the correct hard shut-in sequence.',
+          'Stop pump, pick up to space-out, close annular, line up choke manifold, then record SIDPP/SICP.',
+          'That sequence protects pipe position, establishes secondary barrier, and captures valid shut-in pressures.',
+          [
+            { text: 'Close choke first, then stop pump and close annular.', why: 'Closing choke with pump running can spike pressure and is not the standard sequence.' },
+            { text: 'Close blind/shear ram first for maximum containment.', why: 'Blind/shear is last resort when pipe cannot be controlled; it sacrifices the string and kill path.' },
+            { text: 'Bleed 2 bbl before closing to verify kick size.', why: 'Bleeding before shut-in drops BHP and can worsen influx.' }
+          ]
+        ),
+        q(
+          'After shut-in, which value must stabilize before kill-sheet math is finalized?',
+          'SIDPP must stabilize before final kill mud weight is confirmed.',
+          'Kill mud weight is derived directly from SIDPP. Unstable SIDPP leads to wrong kill density.',
+          [
+            { text: 'Only choke manifold pressure needs to stabilize.', why: 'Manifold pressure is not the primary kill-weight input.' },
+            { text: 'Only SICP is required for kill mud weight.', why: 'SICP is not used for kill MW calculation; SIDPP is required.' },
+            { text: 'No need to wait; first pressure reading is always valid.', why: 'Early readings often drift as influx redistributes and gauges settle.' }
+          ]
+        ),
+        q(
+          'Who is in the minimum immediate notification chain after shut-in?',
+          'Driller -> Toolpusher/OIM -> Company Representative -> Well Control Support as per program.',
+          'This chain ensures command, operator awareness, and specialist support without delay.',
+          [
+            { text: 'Driller -> Mud engineer only.', why: 'Mud engineer input is useful, but command and operator notification cannot be skipped.' },
+            { text: 'Driller -> Night supervisor after circulation starts.', why: 'Notification is immediate after shut-in, not delayed until circulation.' },
+            { text: 'No notification until two gauge checks are complete.', why: 'Waiting increases operational risk and breaks reporting discipline.' }
+          ]
+        ),
+        q(
+          `SIDPP is ${c.sidpp} psi at ${withCommas(c.tvd)} ft TVD with ${c.mwIn.toFixed(1)} ppg mud. What does SIDPP represent?`,
+          'The bottom-hole pressure shortfall against formation pressure while shut in.',
+          'SIDPP quantifies the underbalance at bit depth and is the required input for kill mud weight.',
+          [
+            { text: 'Annular friction pressure while circulating.', why: 'SIDPP is measured static after shut-in, not during circulation friction.' },
+            { text: 'Equivalent of MAASP at the casing shoe.', why: 'MAASP is a shoe integrity limit and is calculated separately.' },
+            { text: 'Pressure caused only by choke line friction.', why: 'Choke line friction exists during flow, not static shut-in.' }
+          ]
+        ),
+        q(
+          `SICP is ${c.sicp} psi and SIDPP is ${c.sidpp} psi. The difference is ${c.sicp - c.sidpp} psi. Most likely influx type?`,
+          c.influx.name === 'gas' ? 'Gas-dominated influx is most likely.' : c.influx.name === 'oil' ? 'Oil-dominated influx is most likely.' : 'Water-dominated influx is most likely.',
+          'SIDPP/SICP relationship helps infer influx density. Lower-density influx generally causes larger SICP-SIDPP separation.',
+          [
+            { text: 'The difference has no diagnostic value.', why: 'Ignoring SIDPP/SICP split discards useful density information used in IWCF interpretation.' },
+            { text: 'It always proves pure water influx.', why: 'Water usually gives smaller pressure differences than gas.' },
+            { text: 'It always proves gauge malfunction.', why: 'Consistent differential pressures are expected and often physically meaningful.' }
+          ]
+        ),
+        q(
+          `Calculate Kill MW with OMW ${c.mwIn.toFixed(1)} ppg, SIDPP ${c.sidpp} psi, TVD ${withCommas(c.tvd)} ft.`,
+          `${c.kmw.toFixed(1)} ppg`,
+          'Correct kill weight uses SIDPP and TVD. Result is rounded up to maintain a safe margin.',
+          [
+            wrongSideppAsSicp,
+            { text: `${c.mwIn.toFixed(1)} ppg`, why: 'Keeping original mud weight leaves the well underbalanced because SIDPP is non-zero.' },
+            { text: `${round(c.kmwRaw, 1).toFixed(1)} ppg rounded down`, why: 'Rounding down can underbalance the well. Standard practice is rounding up to the nearest operational increment.' }
+          ],
+          `Kill MW = OMW + (SIDPP ÷ (0.052 × TVD))\n= ${c.mwIn.toFixed(1)} + (${c.sidpp} ÷ (0.052 × ${c.tvd}))\n= ${c.mwIn.toFixed(1)} + ${round(c.sidpp / (0.052 * c.tvd), 3)}\n= ${round(c.kmwRaw, 3)} ppg\nOperational kill mud weight = ${c.kmw.toFixed(1)} ppg (rounded up)`
+        ),
+        q(
+          'Which kill-weight mistake is most likely to cause a repeated influx during circulation?',
+          'Using a kill mud weight rounded down below required value.',
+          'A rounded-down or underestimated KMW fails to fully balance formation pressure, allowing continued inflow.',
+          [
+            { text: 'Using SIDPP as the basis of calculation.', why: 'Using SIDPP is correct practice, not a mistake.' },
+            { text: 'Preparing kill sheet before opening the choke.', why: 'Preparation before circulation is required, not an error.' },
+            { text: 'Recording both SIDPP and SICP after stabilization.', why: 'Recording both pressures is correct and mandatory.' }
+          ]
+        ),
+        q(
+          `Calculate ICP if SCR pressure is ${c.scr} psi and SIDPP is ${c.sidpp} psi.`,
+          `${c.icp} psi`,
+          'ICP equals SCR pressure plus SIDPP at pump start for kill circulation.',
+          [
+            { text: `${c.scr} psi`, why: 'Using only SCR ignores required formation backpressure from SIDPP.' },
+            { text: `${c.sidpp} psi`, why: 'Using only SIDPP ignores circulating friction represented by SCR.' },
+            { text: `${c.sicp} psi`, why: 'SICP is annulus pressure and not the drillpipe startup target for ICP.' }
+          ],
+          `ICP = SCR pressure + SIDPP\n= ${c.scr} + ${c.sidpp}\n= ${c.icp} psi`
+        ),
+        q(
+          `Calculate FCP using SCR ${c.scr} psi, Kill MW ${c.kmw.toFixed(1)} ppg, OMW ${c.mwIn.toFixed(1)} ppg.`,
+          `${c.fcp} psi`,
+          'FCP scales SCR by the mud-weight ratio Kill MW/OMW after kill mud reaches bit.',
+          [
+            { text: `${c.scr} psi`, why: 'FCP changes with mud-weight ratio and is not equal to SCR unless MW is unchanged.' },
+            { text: `${c.icp} psi`, why: 'ICP is startup pressure and should be higher than FCP in a normal kill schedule.' },
+            { text: `${Math.round(c.scr * (c.mwIn / c.kmw))} psi`, why: 'This inverts the ratio and underestimates required final pressure.' }
+          ],
+          `FCP = SCR pressure × (Kill MW ÷ OMW)\n= ${c.scr} × (${c.kmw.toFixed(1)} ÷ ${c.mwIn.toFixed(1)})\n= ${round(c.scr * (c.kmw / c.mwIn), 2)} psi\nRounded FCP = ${c.fcp} psi`
+        ),
+        q(
+          `Calculate MAASP with LOT EMW ${c.lotEMW.toFixed(1)} ppg, Kill MW ${c.kmw.toFixed(1)} ppg, Shoe Depth ${withCommas(c.shoeDepth)} ft.`,
+          `${c.maasp} psi`,
+          'MAASP is the allowed surface annular pressure margin at the shoe using kill mud hydrostatic.',
+          [
+            { text: `${Math.round((c.lotEMW - c.mwIn) * 0.052 * c.shoeDepth)} psi`, why: 'Using original MW overstates MAASP during kill conditions. Kill MW must be used.' },
+            { text: `${Math.round(c.lotEMW * 0.052 * c.shoeDepth)} psi`, why: 'That is fracture pressure at shoe, not allowable additional surface pressure.' },
+            { text: `${Math.round((c.kmw - c.lotEMW) * 0.052 * c.shoeDepth)} psi`, why: 'Reversed subtraction gives a non-physical negative/incorrect limit.' }
+          ],
+          `MAASP = (LOT EMW - Kill MW) × 0.052 × Shoe Depth\n= (${c.lotEMW.toFixed(1)} - ${c.kmw.toFixed(1)}) × 0.052 × ${c.shoeDepth}\n= ${round((c.lotEMW - c.kmw), 3)} × 0.052 × ${c.shoeDepth}\n= ${round((c.lotEMW - c.kmw) * 0.052 * c.shoeDepth, 2)} psi\nRounded MAASP = ${c.maasp} psi`
+        ),
+        q(
+          `Current casing pressure is ${Math.round(c.maasp * 0.92)} psi. MAASP is ${c.maasp} psi. Best interpretation?`,
+          'Pressure is inside limit but close; maintain strict choke control and avoid overshoot.',
+          'Running near MAASP leaves little margin. Small control errors can fracture the shoe.',
+          [
+            { text: 'Plenty of margin remains; increase pump rate for faster kill.', why: 'Higher rate can raise ECD and casing pressure, quickly exceeding MAASP.' },
+            { text: 'Immediate bleed-down to zero is required.', why: 'Bleeding to zero drops BHP and can take a larger kick.' },
+            { text: 'MAASP applies only after the kill is complete.', why: 'MAASP applies throughout active well control whenever annular pressure is applied.' }
+          ]
+        ),
+        q(
+          'At pump start on a wait-and-weight kill, which pressure target is followed on drillpipe gauge?',
+          'Start at ICP, then reduce on schedule to FCP as kill mud moves to bit.',
+          'This preserves bottom-hole pressure while hydrostatic in the string increases.',
+          [
+            { text: 'Hold SICP constant at shut-in value for full circulation.', why: 'Constant SICP is Driller\'s Method first-circulation logic, not wait-and-weight DP schedule control.' },
+            { text: 'Hold SCR only and ignore schedule.', why: 'Ignoring schedule causes BHP excursions and potential influx or losses.' },
+            { text: 'Start at FCP and increase to ICP near bit.', why: 'Direction is reversed; schedule goes from ICP down to FCP.' }
+          ]
+        ),
+        q(
+          `Kill schedule pressure drop per stroke using ICP ${c.icp} psi, FCP ${c.fcp} psi, strokes-to-bit ${c.strokesToBit}.`,
+          `${c.dropPerStroke} psi/stroke`,
+          'Pressure drop per stroke comes from total DP drop divided by strokes-to-bit.',
+          [
+            { text: `${round((c.icp - c.fcp) / c.stringVol, 3)} psi/stroke`, why: 'Dividing by string volume instead of strokes-to-bit gives wrong unit basis.' },
+            { text: `${round(c.icp / c.strokesToBit, 3)} psi/stroke`, why: 'This ignores FCP and overstates early pressure decline.' },
+            { text: `${round((c.fcp - c.icp) / c.strokesToBit, 3)} psi/stroke`, why: 'Sign is reversed; schedule is a positive drop from ICP to FCP.' }
+          ],
+          `Kill schedule pressure drop per stroke = (ICP - FCP) ÷ strokes to bit\n= (${c.icp} - ${c.fcp}) ÷ ${c.strokesToBit}\n= ${round(c.icp - c.fcp, 3)} ÷ ${c.strokesToBit}\n= ${c.dropPerStroke} psi/stroke`
+        ),
+        q(
+          `String volume is ${c.stringVol} bbl and pump output is ${c.pumpOutput} bbl/stroke. Calculate strokes to bit.`,
+          `${c.strokesToBit} strokes`,
+          'Strokes-to-bit is drillstring volume divided by pump output per stroke.',
+          [
+            { text: `${Math.round(c.stringVol / c.pumpRate)} strokes`, why: 'Pump rate in spm cannot replace pump output in bbl/stroke.' },
+            { text: `${Math.round(c.annVol / c.pumpOutput)} strokes`, why: 'Annulus volume is wrong segment for strokes-to-bit.' },
+            { text: `${Math.round(c.stringVol * c.pumpOutput)} strokes`, why: 'Multiplication gives the wrong dimension and underestimates strokes.' }
+          ],
+          `Strokes to bit = string volume ÷ pump output\n= ${c.stringVol} ÷ ${c.pumpOutput}\n= ${round(c.stringVol / c.pumpOutput, 2)}\nRounded operational value = ${c.strokesToBit} strokes`
+        ),
+        q(
+          `Annular capacity with hole ${c.holeDia.toFixed(2)} in and pipe OD ${c.dpOd.toFixed(2)} in is closest to:`,
+          `${c.annCap.toFixed(4)} bbl/ft`,
+          'Annular capacity uses (Dh^2 - Dp^2) / 1029.4 with diameters in inches.',
+          [
+            { text: `${round((c.holeDia * c.holeDia) / 1029.4, 4).toFixed(4)} bbl/ft`, why: 'Ignoring pipe OD overestimates annular volume.' },
+            { text: `${round((c.dpOd * c.dpOd - c.holeDia * c.holeDia) / 1029.4, 4).toFixed(4)} bbl/ft`, why: 'Reversing terms gives a non-physical negative capacity.' },
+            { text: `${round((c.holeDia - c.dpOd) / 1029.4, 4).toFixed(4)} bbl/ft`, why: 'Subtracting diameters directly is not the annular area formula.' }
+          ],
+          `Annular capacity (bbl/ft) = (Dh² - Dp²) ÷ 1029.4\n= (${c.holeDia.toFixed(2)}² - ${c.dpOd.toFixed(2)}²) ÷ 1029.4\n= ${round(c.holeDia * c.holeDia - c.dpOd * c.dpOd, 4)} ÷ 1029.4\n= ${c.annCap.toFixed(4)} bbl/ft`
+        ),
+        q(
+          'What is the key BHP maintenance principle during choke control?',
+          'Any increase above schedule means open choke slightly; any decrease means close choke slightly.',
+          'Choke movement compensates pressure drift so calculated BHP remains constant at target.',
+          [
+            { text: 'Adjust pump rate to hold BHP and keep choke fixed.', why: 'Changing rate invalidates friction assumptions and the kill schedule.' },
+            { text: 'Hold casing pressure constant for all methods.', why: 'Control variable depends on method and phase; not always constant casing pressure.' },
+            { text: 'Ignore small pressure drift because mud weight dominates.', why: 'Even moderate drift can push the well into influx or losses near narrow margins.' }
+          ]
+        ),
+        q(
+          `Compute BHP with MW ${c.mwIn.toFixed(1)} ppg, TVD ${c.tvd} ft, surface pressure ${c.sidpp} psi.`,
+          `${Math.round(c.bhp)} psi`,
+          'BHP equals hydrostatic plus surface pressure under shut-in conditions.',
+          [
+            { text: `${Math.round(c.hydro)} psi`, why: 'Hydrostatic alone ignores required shut-in backpressure.' },
+            { text: `${Math.round(c.sidpp)} psi`, why: 'Surface pressure alone ignores mud column hydrostatic contribution.' },
+            { text: `${Math.round(c.bhp - c.sidpp)} psi`, why: 'Subtracting SIDPP underestimates BHP and is physically incorrect.' }
+          ],
+          `Hydrostatic = MW × 0.052 × TVD\n= ${c.mwIn.toFixed(1)} × 0.052 × ${c.tvd}\n= ${c.hydro} psi\nBHP = Surface pressure + Hydrostatic pressure\n= ${c.sidpp} + ${c.hydro}\n= ${Math.round(c.bhp)} psi`
+        ),
+        q(
+          `Measured influx gradient is ${c.influx.gradient}. Most likely influx fluid?`,
+          c.influx.name.charAt(0).toUpperCase() + c.influx.name.slice(1),
+          'Influx type can be inferred from gradient bands used in well control interpretation.',
+          [
+            { text: c.influx.name === 'gas' ? 'Water' : 'Gas', why: 'That fluid has a distinctly different gradient range and does not match the data.' },
+            { text: c.influx.name === 'oil' ? 'Water' : 'Oil', why: 'This choice confuses typical fluid gradient bands used in IWCF exams.' },
+            { text: 'Cannot identify without pump pressure.', why: 'Pump pressure is not required for basic gradient-based fluid identification.' }
+          ],
+          `Influx gradient (gas) ≈ 0.05-0.15 psi/ft\nInflux gradient (oil) ≈ 0.30-0.35 psi/ft\nInflux gradient (water) ≈ 0.43-0.46 psi/ft\nMeasured value aligns with ${c.influx.name} behavior.`
+        ),
+        q(
+          'Which shut-in pressure pattern most strongly suggests gas migration?',
+          'SIDPP roughly stable while SICP gradually rises with time.',
+          'This pattern is classic gas migration in a closed annulus before circulation starts.',
+          [
+            { text: 'Both SIDPP and SICP immediately drop to zero.', why: 'That indicates a leak or open system, not gas migration.' },
+            { text: 'SIDPP rises sharply while SICP stays fixed.', why: 'That is not the usual migration signature in annulus.' },
+            { text: 'Both pressures stay perfectly constant for hours.', why: 'Perfectly flat pressure is uncommon with migrating compressible gas.' }
+          ]
+        ),
+        q(
+          'During kill circulation, drillpipe pressure is above schedule by 80 psi. Correct choke action?',
+          'Open choke slightly to bring drillpipe pressure back to schedule.',
+          'Above-schedule pressure implies excessive backpressure and BHP. Opening choke trims pressure safely.',
+          [
+            { text: 'Close choke to force faster kill.', why: 'Closing choke increases pressure further and can exceed MAASP.' },
+            { text: 'Increase pump rate until drillpipe pressure matches schedule.', why: 'Pump-rate changes invalidate schedule friction assumptions.' },
+            { text: 'Ignore until deviation exceeds 200 psi.', why: 'Large deviations can quickly produce losses or fracture near shoe.' }
+          ]
+        ),
+        q(
+          'During kill circulation, drillpipe pressure is 70 psi below schedule. Correct response?',
+          'Close choke slightly to raise pressure back to schedule.',
+          'Below schedule means BHP is too low. Closing choke restores required backpressure.',
+          [
+            { text: 'Open choke further to improve returns.', why: 'Opening further decreases BHP and can worsen influx.' },
+            { text: 'Reduce pump speed until pressure rises naturally.', why: 'Lower pump speed lowers friction and does not solve underbalanced BHP control.' },
+            { text: 'Switch to volumetric method immediately.', why: 'Method changes are not automatic for minor controllable schedule drift.' }
+          ]
+        ),
+        q(
+          'A 6 bbl gas bubble at 3000 psi reaches 1500 psi with same temperature. Estimated volume?',
+          'Approximately 12 bbl.',
+          'Boyle\'s law indicates volume doubles when pressure halves, assuming constant temperature.',
+          [
+            { text: 'Approximately 3 bbl.', why: 'This reverses Boyle\'s relation; lower pressure increases gas volume.' },
+            { text: 'Approximately 6 bbl.', why: 'Gas volume does not stay constant during major pressure reduction.' },
+            { text: 'Approximately 9 bbl.', why: 'Value is not consistent with P1V1 = P2V2 for a 2:1 pressure ratio.' }
+          ],
+          `Boyle's Law = P1 × V1 = P2 × V2\n3000 × 6 = 1500 × V2\nV2 = (3000 × 6) ÷ 1500\nV2 = 12 bbl`
+        ),
+        q(
+          "For Driller's Method, what defines circulation 1?",
+          'Circulate influx out with original mud while holding casing pressure constant at target.',
+          'Driller\'s Method first circulation removes influx before kill mud enters the string.',
+          [
+            { text: 'Pump kill mud immediately and hold DP at FCP from start.', why: 'That is not circulation 1 in Driller\'s Method.' },
+            { text: 'Hold both casing and drillpipe pressures fixed simultaneously.', why: 'Both cannot be independently fixed during dynamic flow.' },
+            { text: 'Bleed off all casing pressure before pumping.', why: 'Bleeding pressure first reduces BHP and increases influx risk.' }
+          ]
+        ),
+        q(
+          "What is the key operational risk if Driller's Method circulation 1 is too slow?",
+          'Longer exposure to gas migration and annular expansion before full kill mud arrives.',
+          'Extended circulation time increases migration-related pressure management complexity.',
+          [
+            { text: 'No risk; slower is always safer in every condition.', why: 'Excessive delay can worsen migration and pressure behavior in gas wells.' },
+            { text: 'It eliminates need for MAASP monitoring.', why: 'MAASP monitoring remains critical throughout the operation.' },
+            { text: 'It guarantees lower pump friction and therefore lower BHP.', why: 'BHP control depends on full schedule behavior, not speed alone.' }
+          ]
+        ),
+        q(
+          'For Wait & Weight, what is prepared before opening the pump?',
+          'Kill mud, ICP, FCP, and full drillpipe schedule are ready before circulation starts.',
+          'Wait & Weight depends on single-circulation execution using precomputed schedule values.',
+          [
+            { text: 'Only kill mud weight is needed; schedule can be improvised.', why: 'Improvised schedules cause BHP control errors.' },
+            { text: 'Only MAASP is needed because DP will self-correct.', why: 'MAASP is a limit, not a full control schedule.' },
+            { text: 'Open choke first and calculate while circulating.', why: 'Starting without calculations increases risk and violates procedure discipline.' }
+          ]
+        ),
+        q(
+          'Main procedural advantage of Wait & Weight over Driller\'s Method is:',
+          'Potentially lower total annular pressure exposure due to single circulation.',
+          'Bringing kill mud to the bit during first circulation can reduce peak annular pressures in many cases.',
+          [
+            { text: 'No need for choke adjustments once pump starts.', why: 'Choke adjustments are still required to track schedule.' },
+            { text: 'No need for kill mud calculations.', why: 'Accurate kill mud calculations are mandatory.' },
+            { text: 'Always faster regardless of rig limitations.', why: 'Mixing and system constraints may offset the single-circulation advantage.' }
+          ]
+        ),
+        q(
+          'Which preventer is preferred for the initial rapid shut-in around unknown pipe position?',
+          'Annular preventer.',
+          'Annular units can seal around a range of pipe sizes and tool joints rapidly.',
+          [
+            { text: 'Blind/shear ram.', why: 'Blind/shear is emergency final barrier, not routine first closure with pipe in hole.' },
+            { text: 'Casing shear ram only.', why: 'Specialized shears are not the normal first shut-in tool.' },
+            { text: 'No preventer; rely on choke closure only.', why: 'Choke cannot replace primary BOP closure for shut-in.' }
+          ]
+        ),
+        q(
+          'When is blind/shear ram closure generally justified?',
+          'When sealing/shearing is the only remaining barrier option in an emergency.',
+          'Shearing sacrifices the string and is reserved for severe contingency situations.',
+          [
+            { text: 'As standard first response to every pit gain.', why: 'Routine use would create unnecessary severe equipment and operational consequences.' },
+            { text: 'Whenever pipe rams are available but slower.', why: 'Available sealing rams should be used first when feasible.' },
+            { text: 'To improve pump efficiency during normal drilling.', why: 'Blind/shear rams are not drilling-efficiency tools.' }
+          ]
+        ),
+        q(
+          'What is the choke manifold\'s primary well control function?',
+          'Apply controlled backpressure while routing returns to safe handling equipment.',
+          'It allows precise annular pressure control during circulation and kill operations.',
+          [
+            { text: 'Increase mud weight mechanically before pits.', why: 'Choke manifolds control pressure/flow, not mud density.' },
+            { text: 'Replace BOP closure as the main barrier.', why: 'Chokes support pressure control but do not replace closed BOP barriers.' },
+            { text: 'Measure formation porosity directly.', why: 'Porosity is not measured by choke manifold equipment.' }
+          ]
+        ),
+        q(
+          'Which statement best distinguishes a mud-gas separator from a vacuum degasser?',
+          'Mud-gas separator handles free gas from choke returns; vacuum degasser removes entrained gas from mud system.',
+          'They serve different pressure/phase conditions and are not interchangeable under kick flow.',
+          [
+            { text: 'Vacuum degasser should receive full kick returns directly from choke.', why: 'Vacuum degassers are not rated for direct high-rate kick flow handling.' },
+            { text: 'Mud-gas separator is only for drilling breaks without gas.', why: 'MGS is specifically for gas-bearing return handling during well control.' },
+            { text: 'Both units are identical except for tank color.', why: 'Design duty and pressure capability are fundamentally different.' }
+          ]
+        ),
+        q(
+          `Scenario-specific topic A (${c.fac.a}): what is the most defensible exam approach?`,
+          'Validate input data first, then apply the selected method exactly as programmed.',
+          'Data quality errors are the most common cause of incorrect well-control decisions under exam and field conditions.',
+          [
+            { text: 'Select the fastest method before checking data consistency.', why: 'Method speed is irrelevant if based on wrong inputs.' },
+            { text: 'Use whichever equation gives lower pressure.', why: 'Choosing outcomes instead of correct formulas is a classic failure mode.' },
+            { text: 'Skip trend data and rely on one gauge snapshot.', why: 'Single snapshots can be misleading; trend and stability matter.' }
+          ]
+        ),
+        q(
+          `In ${c.fac.a}, which documentation habit prevents most calculation disputes?`,
+          'Record assumptions, units, and rounded values directly on the kill sheet.',
+          'Traceable calculations allow cross-checking and reduce handover errors.',
+          [
+            { text: 'Keep final answers only; intermediate steps are unnecessary.', why: 'Missing steps hide unit and arithmetic mistakes.' },
+            { text: 'Use mixed units and convert mentally.', why: 'Untracked conversions are a common source of major mistakes.' },
+            { text: 'Round each intermediate line to whole numbers.', why: 'Aggressive rounding compounds error across schedule calculations.' }
+          ]
+        ),
+        q(
+          `Scenario-specific topic B (${c.fac.b}): if control trends diverge from plan, first action is:`,
+          'Pause progression, verify barrier status, and re-baseline control targets before continuing.',
+          'Operational control requires revalidation when trends depart from expected schedule behavior.',
+          [
+            { text: 'Push ahead to avoid losing pump efficiency.', why: 'Advancing while out-of-control can escalate both influx and losses.' },
+            { text: 'Switch method without team briefing.', why: 'Uncoordinated method switching causes conflicting choke/pump actions.' },
+            { text: 'Ignore until two full circulations are complete.', why: 'Delay can consume MAASP margin and increase hazard.' }
+          ]
+        ),
+        q(
+          `For ${c.fac.b}, which control-room behavior is preferred?`,
+          'One person calls targets, one manipulates choke, and one verifies recorded values.',
+          'Role discipline reduces reaction lag and command confusion during pressure-critical operations.',
+          [
+            { text: 'Allow all available crew to call pressure moves simultaneously.', why: 'Multiple conflicting commands increase control error risk.' },
+            { text: 'Use only radio commands from remote office.', why: 'Delayed remote-only command can be too slow for live choke control.' },
+            { text: 'Rotate choke operator every minute.', why: 'Frequent swaps increase inconsistency in fine control.' }
+          ]
+        ),
+        q(
+          `Scenario-specific topic C (${c.fac.c}): best troubleshooting trigger is:`,
+          'A repeatable mismatch between expected and actual pressure/volume trend.',
+          'Repeatable mismatch indicates model assumption error or equipment issue requiring correction.',
+          [
+            { text: 'Any single noisy gauge reading.', why: 'Single-point noise should be confirmed before major process changes.' },
+            { text: 'Only alarms from one uncalibrated sensor.', why: 'Uncalibrated single sensor data should be validated against independent indicators.' },
+            { text: 'No trigger is needed if circulation continues.', why: 'Unresolved mismatch can lead to unsafe pressure drift.' }
+          ]
+        ),
+        q(
+          `Equipment limits in ${c.fac.c}: if planned pressure exceeds 80% of component rating, you should:`,
+          'Re-assess procedure and reduce exposure before proceeding near rating limits.',
+          'Operating near rating limits requires explicit risk review and conservative control margins.',
+          [
+            { text: 'Proceed normally because ratings are conservative.', why: 'Conservatism does not justify eroding operational safety margin.' },
+            { text: 'Exceed rating briefly to regain schedule.', why: 'Intentional overrating is unacceptable and can cause equipment failure.' },
+            { text: 'Ignore equipment rating if MAASP is lower.', why: 'Both MAASP and equipment ratings are independent hard constraints.' }
+          ]
+        ),
+        q(
+          'Which IWCF-aligned statement is correct regarding two-barrier philosophy?',
+          'Maintain verified primary and secondary barriers at all times during operations.',
+          'Barrier redundancy is central to IWCF well integrity and incident prevention.',
+          [
+            { text: 'Single barrier is acceptable if mud weight is high.', why: 'Single-barrier operation is not acceptable for active well operations.' },
+            { text: 'Secondary barrier may be deferred until after kick signs appear.', why: 'Secondary barrier must be available before primary failure.' },
+            { text: 'Two barriers are required only during tripping.', why: 'Two-barrier expectation applies broadly, not only tripping.' }
+          ]
+        ),
+        q(
+          'Immediate safety priority after confirmed kick is:',
+          'Personnel safety, ignition control, and disciplined command while securing the well.',
+          'Well control actions must run inside a safety framework: muster, communication, and hazard control.',
+          [
+            { text: 'Optimize penetration rate before shutting in.', why: 'ROP has no priority over immediate well control and personnel safety.' },
+            { text: 'Delay safety communication until kill sheet is complete.', why: 'Safety communication cannot wait for calculations.' },
+            { text: 'Keep all non-essential crew on floor for faster response.', why: 'Non-essential exposure increases risk during escalating events.' }
+          ]
+        ),
+        q(
+          'During potential gas release, which emergency response is correct?',
+          'Confirm gas monitoring, control ignition sources, and keep ventilation and exclusion zones enforced.',
+          'Gas control is both a process and life-safety task; ignition control and monitoring are mandatory.',
+          [
+            { text: 'Rely on smell to estimate gas severity.', why: 'Odor is unreliable and dangerous, especially with toxic gases.' },
+            { text: 'Disable detectors to avoid alarm fatigue.', why: 'Detector suppression removes critical early warning capability.' },
+            { text: 'Move all crew downwind for better visibility.', why: 'Downwind positioning may increase exposure to released gas.' }
+          ]
+        ),
+        q(
+          'Post-kill verification should include which first check?',
+          'Static flow check and stable shut-in/flowline confirmation before resuming operations.',
+          'A verified static condition confirms influx removal and barrier stability.',
+          [
+            { text: 'Resume drilling immediately if pressures are lower than initial values.', why: 'Lower pressure alone does not prove a stable, dead well.' },
+            { text: 'Skip flow check if mud logger sees no gas.', why: 'Gas logging alone cannot replace formal static verification.' },
+            { text: 'Open all barriers to prove normal returns quickly.', why: 'Uncontrolled opening can reintroduce risk before confirmation.' }
+          ]
+        ),
+        q(
+          'After kill completion, why perform a formation integrity / shoe check when indicated?',
+          'To confirm the pressure envelope remains below fracture initiation limits for next operations.',
+          'Kill operations may stress the shoe; integrity confirmation prevents hidden loss pathways.',
+          [
+            { text: 'It is optional if no mud was added during kill.', why: 'Integrity need depends on pressure exposure, not only mud additions.' },
+            { text: 'Only required when SIDPP was zero.', why: 'Integrity checks are often more important after significant pressure events.' },
+            { text: 'It replaces all future MAASP calculations.', why: 'MAASP must still be calculated and monitored for each condition.' }
+          ]
+        ),
+        q(
+          'Which common error most often enlarges kick size after shut-in?',
+          'Bleeding pressure without a controlled method or schedule.',
+          'Uncontrolled bleed-down lowers BHP below pore pressure and invites additional influx.',
+          [
+            { text: 'Recording both gauges every minute.', why: 'Frequent recording supports control and does not enlarge kick.' },
+            { text: 'Cross-checking calculations with second person.', why: 'Cross-checking reduces arithmetic and unit errors.' },
+            { text: 'Using calibrated pressure gauges.', why: 'Calibration improves decision quality and safety.' }
+          ]
+        ),
+        q(
+          'Why is arbitrary pump-rate change during kill a frequent exam failure point?',
+          'Because ICP/FCP and friction assumptions are tied to the selected SCR pump rate.',
+          'Changing rate invalidates schedule math and can shift BHP outside the control window.',
+          [
+            { text: 'Pump-rate changes are always required every 5 minutes.', why: 'Routine fixed-interval changes are not standard kill control practice.' },
+            { text: 'Pump-rate changes only affect standpipe gauge cosmetics.', why: 'They materially affect friction losses and pressure balance.' },
+            { text: 'Rate changes do not matter once kill mud is mixed.', why: 'Kill mud density does not remove the need for pressure-schedule integrity.' }
+          ]
+        ),
+        q(
+          `Advanced calc: EMW from BHP ${Math.round(c.bhp)} psi at TVD ${c.tvd} ft is:`,
+          `${c.emw.toFixed(2)} ppg`,
+          'Equivalent mud weight is pressure divided by 0.052 and TVD.',
+          [
+            { text: `${round(c.bhp / c.tvd, 2).toFixed(2)} ppg`, why: 'Missing 0.052 factor gives the wrong unit conversion.' },
+            { text: `${round(c.bhp / (0.052 * c.shoeDepth), 2).toFixed(2)} ppg`, why: 'Using shoe depth instead of TVD overstates EMW at bit depth.' },
+            { text: `${c.mwIn.toFixed(2)} ppg`, why: 'EMW includes surface pressure effects and is not always equal to input mud weight.' }
+          ],
+          `EMW = Pressure ÷ (0.052 × TVD)\n= ${Math.round(c.bhp)} ÷ (0.052 × ${c.tvd})\n= ${c.emw.toFixed(2)} ppg`
+        ),
+        q(
+          `Advanced calc: with annular capacity ${c.annCap.toFixed(4)} bbl/ft, what annular height equals ${c.kickSize} bbl influx?`,
+          `${Math.round(c.kickSize / c.annCap)} ft`,
+          'Influx height estimate is kick volume divided by annular capacity.',
+          [
+            { text: `${Math.round(c.kickSize * c.annCap)} ft`, why: 'Multiplication is dimensionally wrong for volume-to-height conversion.' },
+            { text: `${Math.round(c.annCap / c.kickSize)} ft`, why: 'This inverts the relationship and produces a non-physical tiny height.' },
+            { text: `${Math.round(c.kickSize / c.pumpOutput)} ft`, why: 'Pump output converts to strokes, not annular height.' }
+          ],
+          `Influx height = kick volume ÷ annular capacity\n= ${c.kickSize} ÷ ${c.annCap.toFixed(4)}\n= ${round(c.kickSize / c.annCap, 2)} ft\nOperational estimate = ${Math.round(c.kickSize / c.annCap)} ft`
+        ),
+        q(
+          'Concept check: why are procedures methodical instead of aggressive in well control?',
+          'Because the objective is constant BHP within a narrow pore-pressure/fracture-pressure window.',
+          'Well control success depends on controlled pressure management, not speed alone.',
+          [
+            { text: 'Because regulations forbid all pump and choke movement.', why: 'Procedures allow controlled movement; they forbid uncontrolled movement.' },
+            { text: 'Because heavy mud alone always solves every case.', why: 'Mud weight is essential but not sufficient without pressure control discipline.' },
+            { text: 'Because kick fluids are incompressible in all cases.', why: 'Gas is highly compressible and drives major pressure behavior complexity.' }
+          ]
+        ),
+        q(
+          `Final scenario resolution for ${c.id.toUpperCase()} (${c.name}): best completion criterion is:`,
+          'Well static, barriers verified, post-kill checks signed off, and formal handover completed.',
+          'Resolution is complete only when technical control and management assurance are both closed out.',
+          [
+            { text: 'Resume drilling once one correct pressure is observed.', why: 'Single readings do not prove sustained stability and barrier integrity.' },
+            { text: 'End scenario after influx reaches separator.', why: 'Handling returns is intermediate, not final well verification.' },
+            { text: 'Close out once score target is met.', why: 'Operational completion is based on verified well status, not scoring.' }
+          ]
+        )
+      ];
+
+      if (steps.length !== 50) {
+        throw new Error(`Expected 50 steps, got ${steps.length} for ${c.id}`);
       }
-    ]
-  }
+      for (const [i, step] of steps.entries()) {
+        if (!Array.isArray(step.options) || step.options.length !== 4) {
+          throw new Error(`${c.id} step ${i + 1} does not have 4 options`);
+        }
+      }
+      return steps;
+    }
+
+    const scenarios = TOPICS.map((topic, i) => {
+      const c = contextFor(topic, i + 1);
+      const formationLabel = c.influx.name === 'gas'
+        ? `Gas Sand - PP ${c.kmw.toFixed(1)} ppg EMW`
+        : c.influx.name === 'oil'
+          ? `Oil-Bearing Sand - PP ${c.kmw.toFixed(1)} ppg EMW`
+          : `Water-Bearing Sand - PP ${c.kmw.toFixed(1)} ppg EMW`;
+
+      return {
+        id: topic.id,
+        name: topic.name,
+        difficulty: topic.difficulty,
+        brief: {
+          depth: `${withCommas(c.tvd)} ft TVD`,
+          mw: `${c.mwIn.toFixed(1)} ppg`,
+          formation: formationLabel,
+          status: c.status
+        },
+        objective: `Scenario ${topic.id.toUpperCase()} focuses on <strong>${topic.name}</strong>. Current well snapshot: <strong>TVD ${withCommas(c.tvd)} ft</strong>, <strong>MW ${c.mwIn.toFixed(1)} ppg</strong>, <strong>SIDPP ${c.sidpp} psi</strong>, <strong>SICP ${c.sicp} psi</strong>. Maintain barriers, execute calculations, and resolve the well safely.`,
+        kickSize: c.kickSize,
+        sidpp: c.sidpp,
+        sicp: c.sicp,
+        tvd: c.tvd,
+        mwIn: c.mwIn,
+        shoeDepth: c.shoeDepth,
+        lotEMW: c.lotEMW,
+        pumpRate: c.pumpRate,
+        steps: buildSteps(c)
+      };
+    });
+
+    if (scenarios.length !== 50) {
+      throw new Error(`Expected 50 scenarios, got ${scenarios.length}`);
+    }
+
+    return scenarios;
+  })()
 ];
 
 // ═══════════════════════════════════════════════════════════════════
